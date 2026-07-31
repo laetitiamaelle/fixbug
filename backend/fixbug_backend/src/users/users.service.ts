@@ -29,7 +29,7 @@ const utilisateur=await this.prisma.utilisateur.create({
 
     }
 })
-return "compte creer avec succes"
+return {message:"compte creer avec succes"}
   }
 
 
