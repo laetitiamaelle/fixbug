@@ -28,7 +28,6 @@ export default function ConnexionPage() {
 
         try {
             const response = await fetch(`${API_URL}/users/login`, {
-                // Adaptez la route selon votre backend (ex: /auth/login)
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -38,7 +37,7 @@ export default function ConnexionPage() {
                     motdepasse: motdepasse.trim(),
                 }),
             });
-
+        
             const textData = await response.text();
             let data;
             try {
@@ -59,22 +58,18 @@ export default function ConnexionPage() {
                 return;
             }
 
-            // 🟢 Sauvegarde du token JWT si votre backend en renvoie un
+            
             if (data.access_token || data.token) {
                 localStorage.setItem("token", data.access_token || data.token);
             }
 
-            // 🟢 Redirection automatique selon le rôle de l'utilisateur
-            const userRole = data.user?.role || data.role; // Ajustez selon la structure de la réponse de votre DTO
-
+            console.log("=== RÉPONSE DE L'API LOGIN ===", data);
+            const userRole = data.utilisateur?.role || data.user?.role || data.role;
             if (userRole === "CHEF_PROJET") {
-                router.push("/ui/dashboard/chef_projet");
-            } else if (userRole === "TESTEUR") {
-                router.push("/ui/dashTesteur");
-            } else {
-                // Redirection par défaut dans le dossier dashboard
                 router.push("/ui/dashChefProjet");
-            }
+            } else{
+                router.push("/ui/dashTesteur");
+             } 
         } catch (error) {
             console.error("Erreur de connexion :", error);
             setErrorMessage("Impossible de contacter le serveur.");
