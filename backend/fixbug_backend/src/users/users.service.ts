@@ -4,60 +4,83 @@ import { RegisterDto } from './DTO/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './DTO/login.dto';
-
+import { UpdateProfilDto } from './DTO/modifier-profil.dto';
 @Injectable()
 export class UsersService {
-  constructor(private prisma:PrismaService, private jwtService:JwtService,)  {}
+    constructor(private prisma: PrismaService, private jwtService: JwtService,) { }
 
-async register(user:RegisterDto){
-const emailExist=await this.prisma.utilisateur.findUnique({
-    where:{email:user.email},
-});
+    // ........................insciption.........................
 
-if(emailExist){
-    throw new ConflictException('un utilisateur avec cette email exite deja')
-}
- const motdepasseHache=await bcrypt.hash(user.motdepasse,10)
+    async register(user: RegisterDto) {
+        const emailExist = await this.prisma.utilisateur.findUnique({
+            where: { email: user.email },
+        });
 
-const utilisateur=await this.prisma.utilisateur.create({
-    data:{
-        nom:user.nom,
-        prenom:user.prenom,
-        email:user.email,
-        motdepasse:motdepasseHache,
-        role:user.role
+        if (emailExist) {
+            throw new ConflictException('un utilisateur avec cette email exite deja')
+        }
+        const motdepasseHache = await bcrypt.hash(user.motdepasse, 10)
 
-    }
-})
-return {message:"compte creer avec succes"}
-  }
+        const utilisateur = await this.prisma.utilisateur.create({
+            data: {
+                nom: user.nom,
+                prenom: user.prenom,
+                email: user.email,
+                motdepasse: motdepasseHache,
+                role: user.role
 
-
-  // fonction pour genrer le token
-  private genererToken(utilisateur: { id: number; email: string; role: string }) {
-    const payload = { sub: utilisateur.id, email: utilisateur.email, role: utilisateur.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-      utilisateur: { id: utilisateur.id, email: utilisateur.email, role: utilisateur.role },
-    };
-  }
-
-  async login(data:LoginDto){
-
-    const utilisateur= await this.prisma.utilisateur.findUnique({
-        where:{email:data.email}
-    })
-    if(!utilisateur){
-        throw new UnauthorizedException('aucun utilisateur avec cette email existe')
+            }
+        })
+        return { message: "compte creer avec succes" }
     }
 
-    const motDePasseValide= await bcrypt.compare(data.motdepasse,utilisateur.motdepasse)
-    if(!motDePasseValide){
-        throw new UnauthorizedException('le mot de passe est incorrect')
+
+    //.................fonction pour genrer le token...............
+    
+    private genererToken(utilisateur: { id: number; email: string; role: string }) {
+        const payload = { sub: utilisateur.id, email: utilisateur.email, role: utilisateur.role };
+        return {
+            access_token: this.jwtService.sign(payload),
+            utilisateur: { id: utilisateur.id, email: utilisateur.email, role: utilisateur.role },
+        };
     }
-    if(!utilisateur.actif){
-        throw new ForbiddenException('votre compte a ete desactivé')
-    } 
-    return this.genererToken(utilisateur)
-  }
+
+
+    //....................login................
+    async login(data: LoginDto) {
+
+        const utilisateur = await this.prisma.utilisateur.findUnique({
+            where: { email: data.email }
+        })
+        if (!utilisateur) {
+            throw new UnauthorizedException('aucun utilisateur avec cette email existe')
+        }
+
+        const motDePasseValide = await bcrypt.compare(data.motdepasse, utilisateur.motdepasse)
+        if (!motDePasseValide) {
+            throw new UnauthorizedException('le mot de passe est incorrect')
+        }
+        if (!utilisateur.actif) {
+            throw new ForbiddenException('votre compte a ete desactivé')
+        }
+        return this.genererToken(utilisateur)
+    }
+
+    // ..........................modifier le profil.....................
+    async modifierProfil(userId: number, dto: UpdateProfilDto) {
+        const donneesAModifier: any = {};
+
+        if (dto.nom) donneesAModifier.nom = dto.nom;
+        if (dto.prenom) donneesAModifier.prenom = dto.prenom;
+        if (dto.motdepasse) {
+            donneesAModifier.motdepasse = await bcrypt.hash(dto.motdepasse, 10);
+        }
+
+        return this.prisma.utilisateur.update({
+            where: { id: userId },
+            data: donneesAModifier,
+            select: { id: true, nom: true, prenom: true, email: true, role: true },
+            // select : on ne renvoie jamais le mot de passe haché dans la réponse
+        });
+    }
 }

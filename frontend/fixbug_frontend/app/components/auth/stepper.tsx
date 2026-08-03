@@ -19,7 +19,7 @@ export function Stepper({ current }: StepperProps) {
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
                 current >= step.n
-                  ? "bg-green-800 text-white"
+                  ? "bg-[#00D08C] text-white"
                   : "bg-slate-100 text-slate-400"
               )}
             >

@@ -10,7 +10,7 @@ const links = [
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 border-b shadow-2xl  bg-white">
+    <header className="sticky top-0 z-50 border-b shadow-2xl  bg-white/90">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Logo />
 

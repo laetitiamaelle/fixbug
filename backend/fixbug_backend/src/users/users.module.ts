@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
    imports: [
@@ -11,6 +12,6 @@ import { UsersService } from './users.service';
     }),
   ],
   controllers: [UsersController],
-  providers: [UsersService]
+  providers: [UsersService,JwtStrategy]
 })
 export class UsersModule {}
