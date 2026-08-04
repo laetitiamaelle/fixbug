@@ -105,7 +105,7 @@ export default function InscriptionPage() {
     };
     if (step === 2) {
         return (
-            <main className="flex min-h-screen">
+            <main className="flex w-full overflow-hidden ">
                 <LeftPanel
                     headline="Rejoignez votre équipe sur FixBug."
                     description="Créez votre compte pour commencer à déclarer, suivre et corriger les anomalies avec l'aide de l'IA."
@@ -147,7 +147,7 @@ export default function InscriptionPage() {
                                 {successMessage}
                             </div>
                         )}
-                        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="prenom">Prénom</Label>
@@ -211,8 +211,8 @@ export default function InscriptionPage() {
     }
 
     return (
-        <main className="flex min-h-screen bg-slate-50">
-            <div className="flex w-full flex-col p-6 md:w-1/2 lg:p-10">
+        <main className="flex h-screen w-full overflow-hidden bg-slate-50">
+            <div className="flex h-full w-full flex-col p-6 md:w-1/2 lg:p-10">
                 <div className="flex items-center justify-between">
                     <Link
                         href="/"
@@ -271,7 +271,7 @@ export default function InscriptionPage() {
 
                         <p className="mt-8 text-center text-sm text-slate-500">
                             Vous avez déjà un compte ?
-                            <Link href="ui/auth/connexion" className="font-semibold text-slate-900">
+                            <Link href="/ui/auth/connexion" className="font-semibold text-slate-900">
                                 Connectez-vous
                             </Link>
                         </p>

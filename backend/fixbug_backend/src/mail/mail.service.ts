@@ -1,39 +1,43 @@
-import { Injectable } from '@nestjs/common';
-import { BrevoClient } from '@getbrevo/brevo';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  private brevo = new BrevoClient({ apiKey: process.env.BREVO_API_KEY as string });
+  private transporter: nodemailer.Transporter;
 
-  async envoyerMotDePasseGenere(
-    email: string,
-    prenom: string,
-    motDePasse: string,
-    role: string,
-  ) {
-    const roleUser = this.formaterRole(role);
-
-    await this.brevo.transactionalEmails.sendTransacEmail({
-      sender: {
-        name: process.env.SENDER_NAME as string,
-        email: process.env.SENDER_EMAIL as string,
+  constructor(private readonly configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.get<string>('GMAIL_USER'),
+        pass: this.configService.get<string>('GMAIL_APP_PASSWORD'),
       },
-      to: [{ email, name: prenom }],
-      subject: 'Votre compte Fixbug a été créé',
-      htmlContent: `
-        <p>Bonjour ${prenom},</p>
-        <p>Un compte Fixbug a été créé pour vous par  l'administrateur, avec le rôle <strong>${roleUser}</strong>.</p>
-        <p>Voici votre mot de passe temporaire : <strong>${motDePasse}</strong></p>
-        <p>Nous vous recommandons de le modifier a votre première connexion, depuis votre profil.</p>
-      `,
     });
   }
 
-  private formaterRole(role: string): string {
-    const roles: Record<string, string> = {
-      TESTEUR: 'Testeur',
-      CHEF_PROJET: 'Chef de projet',
+  async envoyerParametre(email: string, prenom: string, motDePasse: string,role:string) {
+    const senderEmail = this.configService.get<string>('GMAIL_USER');
+
+    const mailOptions = {
+      from: `"Fixbug" <${senderEmail}>`,
+      to: email, 
+      subject: 'Votre compte Fixbug a été créé',
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+          <p>Bonjour <strong>${prenom}</strong>,</p>
+          <p>Un compte Fixbug a été créé pour vous par un administrateur.</p>
+          <p>Voici votre mot de passe temporaire : <strong style="font-size: 16px; color: #00D08C;">${motDePasse}</strong></p>
+          <p>Nous vous recommandons de le modifier dès votre première connexion, depuis votre profil.</p>
+        </div>
+      `,
     };
-    return roles[role] ?? role;
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email via Gmail:', error);
+      throw new InternalServerErrorException('Impossible d\'envoyer l\'email d\'activation.');
+    }
   }
 }

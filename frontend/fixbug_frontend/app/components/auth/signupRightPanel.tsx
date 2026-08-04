@@ -2,10 +2,10 @@ import { Workflow } from "lucide-react";
 
 export function SignupAside() {
   return (
-    <div className="hidden flex-col  p-6 md:flex md:w-1/2 lg:p-8">
-      <div className="flex flex-1 flex-col space-y-5 rounded-2xl bg-slate-100 p-8">
-        <section className='bg-slate-200 m-4 rounded-2xl  max-w-3xl mx-auto shadow-2xl border cursor-pointer hover:bg-slate-300'>
-       <img  className=" rounded-2xl   aspect-video object-cover object-top"src="/inscription.jpg" alt="" />
+    <div className="hidden flex-col overflow-hidden h-screen p-6 md:flex md:w-1/2 lg:p-8">
+      <div className="flex flex-1 flex-col space-y-5 rounded-2xl bg-slate-900 p-8">
+        <section className='m-4  max-w-3xl mx-auto  cursor-pointer hover:bg-slate-300'>
+       <img  className=" rounded-2xl  object-cover object-top"src="/inscription.jpg" alt="" />
        
       </section>
 

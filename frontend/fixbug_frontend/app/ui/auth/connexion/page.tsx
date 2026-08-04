@@ -65,9 +65,14 @@ export default function ConnexionPage() {
             const userRole = data.utilisateur?.role || data.user?.role || data.role;
             if (userRole === "CHEF_PROJET") {
                 router.push("/ui/dashChefProjet");
-            } else{
+               
+            } else if(userRole === "ADMINISTRATEUR"){
+                router.push("/ui/dashAdmin");
+               
+             } else{
                 router.push("/ui/dashTesteur");
-             } 
+               
+             }
         } catch (error) {
             console.error("Erreur de connexion :", error);
             setErrorMessage("Impossible de contacter le serveur.");
@@ -75,10 +80,10 @@ export default function ConnexionPage() {
         }
     }
     return (
-        <main className="flex min-h-screen">
+        <main className="flex ">
             <LeftPanel
                 headline="Maîtrisez votre cycle de développement."
-                description="Rejoignez des milliers de chefs de projet et testeurs qui utilisent l'IA pour identifier et résoudre les bugs plus rapidement que jamais."
+                description="Rejoignez des milliers de chefs de projet et testeurs qui utilisent l'IA pour identifier et résoudre les bugs plus rapidement ."
             />
 
             <div className="flex w-full items-center justify-center bg-slate-50 px-6 py-16 md:w-1/2">

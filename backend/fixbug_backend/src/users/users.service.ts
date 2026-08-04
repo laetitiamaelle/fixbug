@@ -1,13 +1,18 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, UnauthorizedException,NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDto } from './DTO/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './DTO/login.dto';
+import { CreerUtilisateurDto } from './DTO/creer-utilisateur.dto';
 import { UpdateProfilDto } from './DTO/modifier-profil.dto';
+import { MailService} from 'src/mail/mail.service';
+import { genererMotDePasseAleatoire } from './utils/genere-mot-de-passe';
+
+
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService, private jwtService: JwtService,) { }
+    constructor(private prisma: PrismaService, private jwtService: JwtService, private mailService:MailService) { }
 
     // ........................insciption.........................
 
@@ -36,7 +41,7 @@ export class UsersService {
 
 
     //.................fonction pour genrer le token...............
-    
+
     private genererToken(utilisateur: { id: number; email: string; role: string }) {
         const payload = { sub: utilisateur.id, email: utilisateur.email, role: utilisateur.role };
         return {
@@ -67,20 +72,94 @@ export class UsersService {
     }
 
     // ..........................modifier le profil.....................
-    async modifierProfil(userId: number, dto: UpdateProfilDto) {
+    async modifierProfil(userId: number, data: UpdateProfilDto) {
         const donneesAModifier: any = {};
 
-        if (dto.nom) donneesAModifier.nom = dto.nom;
-        if (dto.prenom) donneesAModifier.prenom = dto.prenom;
-        if (dto.motdepasse) {
-            donneesAModifier.motdepasse = await bcrypt.hash(dto.motdepasse, 10);
+        if (data.nom) donneesAModifier.nom = data.nom;
+        if (data.prenom) donneesAModifier.prenom = data.prenom;
+        if (data.motdepasse) {
+            donneesAModifier.motdepasse = await bcrypt.hash(data.motdepasse, 10);
         }
 
         return this.prisma.utilisateur.update({
             where: { id: userId },
             data: donneesAModifier,
             select: { id: true, nom: true, prenom: true, email: true, role: true },
-            // select : on ne renvoie jamais le mot de passe haché dans la réponse
         });
     }
+
+    // ------------------CREER UN UTILISATEUR / ADMINISTRATEUR ---------------
+
+    
+async creerUtilisateur(data: CreerUtilisateurDto) {
+  const emailExist = await this.prisma.utilisateur.findUnique({
+    where: { email: data.email },
+  });
+  if (emailExist) {
+    throw new ConflictException('un utilisateur avec cette email existe deja');
+  }
+
+  if (data.role === 'ADMINISTRATEUR') {
+    const adminExiste = await this.prisma.utilisateur.findFirst({
+      where: { role: 'ADMINISTRATEUR' },
+    });
+    if (adminExiste) {
+      throw new ConflictException('Un administrateur existe déjà. Un seul administrateur est autorisé.');
+    }
+  }
+
+  const motDePasseGenere = genererMotDePasseAleatoire();
+  console.log('MOT DE PASSE GÉNÉRÉ (à comparer) :', JSON.stringify(motDePasseGenere));
+  const motdepasseHache = await bcrypt.hash(motDePasseGenere, 10);
+
+  const utilisateur = await this.prisma.utilisateur.create({
+    data: {
+      nom: data.nom,
+      prenom: data.prenom,
+      email: data.email,
+      motdepasse: motdepasseHache,
+      role: data.role,
+    },
+    select: { id: true, nom: true, prenom: true, email: true, role: true, actif: true },
+  });
+
+  await this.mailService.envoyerParametre(data.email, data.prenom, motDePasseGenere,data.role);
+  return utilisateur;
+}
+
+// ---------------------supprimer compte / administrateur ----------------------
+
+async supprimerUtilisateur(id: number) {
+  await this.prisma.utilisateur.delete({ where: { id } });
+  return { message: 'Utilisateur supprimé avec succès' };
+}
+
+// ---------------------activer compte / administrateur ----------------------
+
+async activerCompte(id: number) {
+  return this.prisma.utilisateur.update({
+    where: { id },
+    data: { actif: true },
+    select: { id: true, email: true, actif: true },
+  });
+}
+
+// ---------------------desactiver compte / administrateur ----------------------
+async desactiverCompte(id: number) {
+  const utilisateur = await this.prisma.utilisateur.findUnique({ where: { id } });
+
+  if (!utilisateur) {
+    throw new NotFoundException('Utilisateur introuvable');
+  }
+
+  if (utilisateur.role === 'ADMINISTRATEUR') {
+    throw new ForbiddenException("Impossible de désactiver l'administrateur  du système");
+  }
+
+  return this.prisma.utilisateur.update({
+    where: { id },
+    data: { actif: false },
+    select: { id: true, email: true, actif: true },
+  });
+}
 }

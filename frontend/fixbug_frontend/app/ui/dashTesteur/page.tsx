@@ -1,9 +1,5 @@
 import { div } from "framer-motion/client";
 
-export default function Testeur(){
-    return(
-        <div>
-            dashboard testeur
-        </div>
-    )
+export default function DashboardTesteur(){
+    return <div> dashboard testeur</div>
 }

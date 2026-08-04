@@ -9,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 enum Role {
@@ -19,15 +18,23 @@ enum Role {
 }
 
 model Utilisateur {
-  id          Int      @id @default(autoincrement())
-  nom         String
-  prenom      String
-  email       String   @unique
-  motdepasse  String
-  role        Role
-  actif       Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  nom        String
+  prenom     String
+  email      String   @unique
+  motdepasse String
+  role       Role
+  actif      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("utilisateurs")
+}
+
+model Projet {
+  id  Int    @id @default(autoincrement())
+  nom String
+  description String
+  liengit String
+  technologie String[]
 }
