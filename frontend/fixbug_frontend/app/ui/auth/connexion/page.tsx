@@ -80,13 +80,13 @@ export default function ConnexionPage() {
         }
     }
     return (
-        <main className="flex ">
+        <main className="flex h-full">
             <LeftPanel
                 headline="Maîtrisez votre cycle de développement."
                 description="Rejoignez des milliers de chefs de projet et testeurs qui utilisent l'IA pour identifier et résoudre les bugs plus rapidement ."
             />
 
-            <div className="flex w-full items-center justify-center bg-slate-50 px-6 py-16 md:w-1/2">
+            <div className="flex w-full items-center justify-center bg-slate-50 px-6  md:w-1/2">
 
                 <div className="w-full max-w-sm">
                     <div className="mb-8 flex justify-center">

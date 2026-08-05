@@ -10,7 +10,7 @@ interface LeftPanelProps {
 
 export function LeftPanel({ headline, description }: LeftPanelProps) {
   return (
-    <div className="hidden h-screen flex-col justify-between   bg-slate-900 p-10 md:flex md:w-1/2 lg:p-14">
+    <div className="hidden h-full flex-col justify-between   bg-slate-900 p-10 md:flex md:w-1/2 lg:p-14">
       
       <div className="absolute inset-0 opacity-[0.07] " />
 

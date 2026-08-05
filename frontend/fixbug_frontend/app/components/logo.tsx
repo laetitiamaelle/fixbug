@@ -4,13 +4,7 @@ interface LogoProps {
   className?: string;
 }
 
-/**
- * TODO: remplace le bloc <span> ci-dessous par ton vrai logo, par ex :
- *
- * <Image src="/logo.png" alt="FixBug" width={28} height={28} />
- *
- * (place le fichier image dans /public/logo.png)
- */
+
 export function Logo({ className = "" }: LogoProps) {
 
   return (

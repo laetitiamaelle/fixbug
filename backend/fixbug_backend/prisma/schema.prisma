@@ -27,6 +27,8 @@ model Utilisateur {
   actif      Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  projetsCrees   Projet[]              @relation("ProjetsCrees")
+  collaborations ProjetCollaborateur[]
 
   @@map("utilisateurs")
 }
@@ -37,4 +39,23 @@ model Projet {
   description String
   liengit String
   technologie String[]
+  chefProjetId   Int
+  chefProjet     Utilisateur           @relation("ProjetsCrees", fields: [chefProjetId], references: [id])
+  collaborateurs ProjetCollaborateur[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("projets")
+}
+
+model ProjetCollaborateur {
+  id            Int         @id @default(autoincrement())
+  projetId      Int
+  projet        Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  utilisateurId Int
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  dateAjout     DateTime    @default(now())
+
+  @@unique([projetId, utilisateurId])
+  @@map("projet_collaborateurs")
 }

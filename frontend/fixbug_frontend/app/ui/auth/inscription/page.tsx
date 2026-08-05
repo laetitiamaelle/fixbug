@@ -211,7 +211,7 @@ export default function InscriptionPage() {
     }
 
     return (
-        <main className="flex h-screen w-full overflow-hidden bg-slate-50">
+        <main className="flex h-full w-full bg-slate-50">
             <div className="flex h-full w-full flex-col p-6 md:w-1/2 lg:p-10">
                 <div className="flex items-center justify-between">
                     <Link
