@@ -6,11 +6,13 @@ import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProjetsModule } from './projets/projets.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { CollaborationsModule } from './collaborations/collaborations.module';
 
 @Module({
   imports: [PrismaModule, UsersModule,ConfigModule.forRoot({
       isGlobal: true,
-    }), MailModule, ProjetsModule],
+    }), MailModule, ProjetsModule, NotificationsModule, CollaborationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

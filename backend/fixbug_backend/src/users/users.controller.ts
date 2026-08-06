@@ -1,4 +1,4 @@
-import { Body, Patch, Controller, Post, Get, UseGuards, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Body, Patch, Controller, Post, Get, UseGuards, Delete, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from './DTO/register.dto';
 import { LoginDto } from './DTO/login.dto';
@@ -68,5 +68,15 @@ export class UsersController {
     @Roles('ADMINISTRATEUR')
     desactiverCompte(@Param('id', ParseIntPipe) id: number) {
         return this.userService.desactiverCompte(id);
+    }
+    @Get('projets/:id/rechercher-testeur')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('CHEF_PROJET')
+    async rechercherTesteur(
+        @Param('id', ParseIntPipe) projetId: number,
+        @Query('q') motCle: string,
+    ) {
+        return this.userService.rechercherUtilisateur(projetId, motCle);
     }
 }

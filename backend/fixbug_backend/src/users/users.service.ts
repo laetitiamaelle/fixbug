@@ -136,12 +136,18 @@ async supprimerUtilisateur(id: number) {
 
 // ---------------------activer compte / administrateur ----------------------
 
-async activerCompte(id: number) {
-  return this.prisma.utilisateur.update({
+async activerCompte(id:number) {
+   const utilisateur = await this.prisma.utilisateur.findUnique({ where: { id } });
+   if (!utilisateur) {
+    throw new NotFoundException(`Utilisateur avec l'ID ${id} introuvable`);
+  }
+  const resultat= await this.prisma.utilisateur.update({
     where: { id },
     data: { actif: true },
     select: { id: true, email: true, actif: true },
   });
+  await this.mailService.compteactiver(utilisateur.email,utilisateur.prenom)
+  return  resultat
 }
 
 // ---------------------desactiver compte / administrateur ----------------------
@@ -155,11 +161,47 @@ async desactiverCompte(id: number) {
   if (utilisateur.role === 'ADMINISTRATEUR') {
     throw new ForbiddenException("Impossible de désactiver l'administrateur  du système");
   }
-
+   await this.mailService.comptedescativer(utilisateur.email,utilisateur.prenom)
   return this.prisma.utilisateur.update({
     where: { id },
     data: { actif: false },
     select: { id: true, email: true, actif: true },
+  });
+}
+
+//  ----------------rechercher un utilisateur-----------
+async rechercherUtilisateur(projetId: number, motCle: string) {
+  // 1. Récupère les ids des testeurs déjà collaborateurs sur ce projet
+  const collaborateursExistants = await this.prisma.projetCollaborateur.findMany({
+    where: { projetId },
+    select: { utilisateurId: true },
+  });
+
+  // 2. Récupère les ids des testeurs déjà invités (invitation en attente) sur ce projet
+  const invitationsEnAttente = await this.prisma.invitation.findMany({
+    where: { projetId, statut: 'EN_ATTENTE' },
+    select: { utilisateurId: true },
+  });
+
+  // 3. Fusionne les deux listes d'ids à exclure
+  const idsAExclure = [
+    ...collaborateursExistants.map((c) => c.utilisateurId),
+    ...invitationsEnAttente.map((i) => i.utilisateurId),
+  ];
+
+  // 4. Recherche, en excluant ces ids
+  return this.prisma.utilisateur.findMany({
+    where: {
+      role: 'TESTEUR',
+      actif: true,
+      id: { notIn: idsAExclure },
+      OR: [
+        { nom: { contains: motCle, mode: 'insensitive' } },
+        { prenom: { contains: motCle, mode: 'insensitive' } },
+        { email: { contains: motCle, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true, nom: true, prenom: true, email: true },
   });
 }
 }

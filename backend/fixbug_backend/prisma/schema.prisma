@@ -29,7 +29,8 @@ model Utilisateur {
   updatedAt  DateTime @updatedAt
   projetsCrees   Projet[]              @relation("ProjetsCrees")
   collaborations ProjetCollaborateur[]
-
+  invitations Invitation[]
+  notifications Notification[]
   @@map("utilisateurs")
 }
 
@@ -44,7 +45,7 @@ model Projet {
   collaborateurs ProjetCollaborateur[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
+  invitations Invitation[]
   @@map("projets")
 }
 
@@ -59,3 +60,30 @@ model ProjetCollaborateur {
   @@unique([projetId, utilisateurId])
   @@map("projet_collaborateurs")
 }
+
+enum StatutInvitation {
+  EN_ATTENTE
+  ACCEPTEE
+  REFUSEE
+}
+model Invitation {
+  id Int @id @default(autoincrement())
+  projetId Int 
+  projet Projet @relation(fields: [projetId],references: [id],onDelete: Cascade)
+  utilisateurId Int
+  utilisateur Utilisateur @relation(fields: [utilisateurId],references: [id],onDelete: Cascade)
+  statut StatutInvitation @default(EN_ATTENTE)
+  dateEnvoie DateTime @default(now())
+  @@map("invitations")
+}
+
+model Notification{
+  id Int @id @default(autoincrement())
+  utilisateurId Int
+  utilisateur Utilisateur @relation(fields: [utilisateurId],references: [id],onDelete: Cascade)
+  titre String
+  contenu String
+  lue Boolean @default(false)
+  dateEnvoie DateTime @default(now())
+  @@map("notifications")
+} 
