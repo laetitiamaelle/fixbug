@@ -122,16 +122,55 @@ async creerUtilisateur(data: CreerUtilisateurDto) {
     },
     select: { id: true, nom: true, prenom: true, email: true, role: true, actif: true },
   });
-
+  try{
   await this.mailService.envoyerParametre(data.email, data.prenom, motDePasseGenere,data.role);
+  }catch(erreurEmail){
+    console.error('Échec envoi email de bienvenue :', erreurEmail);
+  }
   return utilisateur;
 }
 
 // ---------------------supprimer compte / administrateur ----------------------
 
 async supprimerUtilisateur(id: number) {
+  const utilisateur = await this.prisma.utilisateur.findUnique({ where: { id } });
+   if (!utilisateur) {
+    throw new NotFoundException(`Utilisateur avec l'ID ${id} introuvable`);
+  }
   await this.prisma.utilisateur.delete({ where: { id } });
+  await this.mailService.suppressionCompteMail(utilisateur.email,utilisateur.prenom)
   return { message: 'Utilisateur supprimé avec succès' };
+}
+//-----------------------lister les utilisateur -------------------
+
+async listerUtilisateursAdmin(page: number, limit: number, recherche?: string) {
+  const where = recherche
+    ? {
+        OR: [
+          { nom: { contains: recherche, mode: 'insensitive' as const } },
+          { prenom: { contains: recherche, mode: 'insensitive' as const } },
+          { email: { contains: recherche, mode: 'insensitive' as const } },
+        ],
+      }
+    : {};
+
+  const [data, total] = await Promise.all([
+    this.prisma.utilisateur.findMany({
+      where:{
+        OR:[
+          {role:"CHEF_PROJET"},
+          {role:"TESTEUR"}
+        ]
+      },
+      select: { id: true, nom: true, prenom: true, email: true, role: true, actif: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    this.prisma.utilisateur.count({ where }),
+  ]);
+
+  return { data, total, page, totalPages: Math.ceil(total / limit) };
 }
 
 // ---------------------activer compte / administrateur ----------------------
@@ -171,25 +210,25 @@ async desactiverCompte(id: number) {
 
 //  ----------------rechercher un utilisateur-----------
 async rechercherUtilisateur(projetId: number, motCle: string) {
-  // 1. Récupère les ids des testeurs déjà collaborateurs sur ce projet
+  
   const collaborateursExistants = await this.prisma.projetCollaborateur.findMany({
     where: { projetId },
     select: { utilisateurId: true },
   });
 
-  // 2. Récupère les ids des testeurs déjà invités (invitation en attente) sur ce projet
+  
   const invitationsEnAttente = await this.prisma.invitation.findMany({
     where: { projetId, statut: 'EN_ATTENTE' },
     select: { utilisateurId: true },
   });
 
-  // 3. Fusionne les deux listes d'ids à exclure
+ 
   const idsAExclure = [
     ...collaborateursExistants.map((c) => c.utilisateurId),
     ...invitationsEnAttente.map((i) => i.utilisateurId),
   ];
 
-  // 4. Recherche, en excluant ces ids
+  
   return this.prisma.utilisateur.findMany({
     where: {
       role: 'TESTEUR',

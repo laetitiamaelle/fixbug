@@ -9,10 +9,10 @@ export default function LandingPage() {
   return (
     <main className="bg-white">
       <Navbar />
-      <FadeIn delay={0.1} direction="left">
+      
         <Hero />
-      </FadeIn>
-      <FadeIn delay={0.2} direction="right">
+     
+    
       <FeatureSection
         imageUrl="buglanding.jpg"
         title="Détection Intelligente par IA"
@@ -24,10 +24,10 @@ export default function LandingPage() {
           { label: "Détection des régressions" },
         ]}
         panelClassName="bg-sky-50"
-      /> </FadeIn>
-      <FadeIn>
+      /> 
+      
       <div className="w-full h-16 bg-slate-50 rounded-2xl shadow-2xl"></div>
-      <Footer /> </FadeIn>
+      <Footer /> 
     </main>
   );
 }

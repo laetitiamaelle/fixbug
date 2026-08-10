@@ -27,10 +27,10 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
            <Button  size="sm" className="border border-slate-900 text-slate-900 bg-transparent hover:bg-slate-900 hover:text-white transition-colors duration-200">
-            <Link href="/ui/auth/connexion">sign up</Link>
+            <Link href="/auth/connexion">se connecter</Link>
           </Button>
           <Button  size="sm" className="hover:border-slate-900 border bg-slate-800">
-            <Link href="/ui/auth/inscription">sign in</Link>
+            <Link href="/auth/inscription">inscription</Link>
           </Button>
         </div>
       </div>

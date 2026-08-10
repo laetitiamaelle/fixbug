@@ -87,4 +87,29 @@ export class MailService {
       console.error('Erreur lors de l\'envoi de l\'email via Gmail:', error);
       throw new InternalServerErrorException('Impossible d\'envoyer l\'email d\'activation.');
     }}
+// mail lors de la suppression du compte
+    async suppressionCompteMail(email: string, prenom: string){
+  const senderEmail = this.configService.get<string>('GMAIL_USER');
+
+    const mailOptions = {
+      from: `"Fixbug" <${senderEmail}>`,
+      to: email, 
+      subject: 'Votre compte Fixbug a été supprimer',
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+          <p>chers <strong>${prenom}</strong>,</p>
+          <p>votre compte Fixbug a été supprimer par l' administrateur.</p>
+          <p>veuillez le contacter au 681282580 pour plus d'informations</p>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email via Gmail:', error);
+      throw new InternalServerErrorException('Impossible d\'envoyer l\'email d\'activation.');
+    }
+  }
+
 }

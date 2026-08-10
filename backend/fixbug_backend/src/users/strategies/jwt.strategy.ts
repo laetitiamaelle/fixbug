@@ -22,7 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Compte introuvable ou désactivé');
     }
 
-    // Ce qui est renvoyé ici devient accessible via request.user dans tes controllers
-    return { id: utilisateur.id, email: utilisateur.email, role: utilisateur.role };
+    return { id: utilisateur.id,
+       email: utilisateur.email, 
+       nom: utilisateur.nom,
+       prenom: utilisateur.prenom,
+       role: utilisateur.role };
   }
 }

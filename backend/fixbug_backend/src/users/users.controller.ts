@@ -54,6 +54,18 @@ export class UsersController {
         return this.userService.supprimerUtilisateur(id);
     }
 
+    @Get('admin/utilisateurs')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMINISTRATEUR')
+listerUtilisateurs(
+  @Query('page') page = '1',
+  @Query('limit') limit = '2',
+  @Query('recherche') recherche?: string,
+) {
+  return this.userService.listerUtilisateursAdmin(Number(page), Number(limit), recherche);
+}
+
     @Patch('admin/utilisateurs/:id/activer')
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)

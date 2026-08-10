@@ -64,13 +64,13 @@ export default function ConnexionPage() {
             console.log("=== RÉPONSE DE L'API LOGIN ===", data);
             const userRole = data.utilisateur?.role || data.user?.role || data.role;
             if (userRole === "CHEF_PROJET") {
-                router.push("/ui/dashChefProjet");
+                router.push("/chef_projet");
                
             } else if(userRole === "ADMINISTRATEUR"){
-                router.push("/ui/dashAdmin");
+                router.push("/admin");
                
              } else{
-                router.push("/ui/dashTesteur");
+                router.push("/dashTesteur");
                
              }
         } catch (error) {
@@ -114,7 +114,7 @@ export default function ConnexionPage() {
                                     type="email"
                                     required
                                     placeholder="example@gmail.com"
-                                    className="pl-9"
+                                    className="pl-9 hover:border-[#00D08C]"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
@@ -138,9 +138,10 @@ export default function ConnexionPage() {
                                     type={showPassword ? "text" : "password"}
                                     required
                                     placeholder="••••••••"
-                                    className="pl-9 pr-9"
+                                    className="pl-9 pr-9 hover:border-[#00D08C]"
                                     value={motdepasse}
                                     onChange={(e) => setMotdepasse(e.target.value)}
+                                   
                                 />
                                 <button
                                     type="button"
@@ -162,7 +163,7 @@ export default function ConnexionPage() {
                         </div>
 
                         <Button
-                            type="submit"
+                            type="submit" 
                             disabled={loading}
                             className="w-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center gap-2"
                         >
@@ -179,7 +180,7 @@ export default function ConnexionPage() {
 
                     <p className="mt-6 text-center text-sm text-slate-500">
                         Pas encore de compte ?{" "}
-                        <Link href="/ui/auth/inscription" className="font-semibold text-slate-900">
+                        <Link href="/auth/inscription" className="font-semibold text-slate-900">
                             Inscrivez vous
                         </Link>
                     </p>
