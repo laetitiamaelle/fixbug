@@ -91,7 +91,7 @@ export default function InscriptionPage() {
                 setLoading(false);
             }, 2000);
             setTimeout(() => {
-                router.push("/auth/connexion");
+                router.push("/connexion");
             }, 3000);
 
         } catch (error) {
@@ -200,7 +200,7 @@ export default function InscriptionPage() {
 
                         <p className="mt-6 text-center text-sm text-slate-500">
                             Déjà un compte ?{" "}
-                            <Link href="/auth/connexion" className="font-semibold text-slate-900">
+                            <Link href="/connexion" className="font-semibold text-slate-900">
                                 Connectez-vous
                             </Link>
                         </p>

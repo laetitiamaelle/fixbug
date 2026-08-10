@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const navCommune = [
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/profil", label: "Profil", icon: UserPen },
 ];
 
 const navChefEtTesteur = [
@@ -20,7 +19,9 @@ const navChefEtTesteur = [
 ];
 
 const navAdmin = [
-  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users2 },
+  { href: "/admin/", label: "Utilisateurs", icon: Users2 },
+  
+  { href: "/profil", label: "Profil", icon: UserPen },
 ];
 
 export function Sidebar() {

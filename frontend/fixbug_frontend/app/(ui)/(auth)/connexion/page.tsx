@@ -70,12 +70,12 @@ export default function ConnexionPage() {
                 router.push("/admin");
                
              } else{
-                router.push("/dashTesteur");
+                router.push("/testeur");
                
              }
         } catch (error) {
             console.error("Erreur de connexion :", error);
-            setErrorMessage("Impossible de contacter le serveur.");
+            setErrorMessage("Impossible de se connecter,.");
             setLoading(false);
         }
     }
@@ -180,7 +180,7 @@ export default function ConnexionPage() {
 
                     <p className="mt-6 text-center text-sm text-slate-500">
                         Pas encore de compte ?{" "}
-                        <Link href="/auth/inscription" className="font-semibold text-slate-900">
+                        <Link href="/inscription" className="font-semibold text-slate-900">
                             Inscrivez vous
                         </Link>
                     </p>
