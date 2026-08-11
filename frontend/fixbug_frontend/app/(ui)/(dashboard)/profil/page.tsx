@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2 ,EyeOff,Eye} from "lucide-react";
 
 const labelsRole: Record<string, string> = {
   TESTEUR: "Testeur",
@@ -130,6 +130,8 @@ function FormulaireMotDePasse() {
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces] = useState(false);
   const [erreur, setErreur] = useState("");
+  const [afficherNouveau, setAfficherNouveau] = useState(false);
+  const [afficherConfirmation, setAfficherConfirmation] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -167,23 +169,47 @@ function FormulaireMotDePasse() {
 
       <div className="space-y-2">
         <Label htmlFor="nouveauMotDePasse">Nouveau mot de passe</Label>
-        <Input
-          id="nouveauMotDePasse"
-          type="password"
-          value={nouveauMotDePasse}
-          onChange={(e) => setNouveauMotDePasse(e.target.value)}
-          minLength={8}
-        />
+        <div className="relative">
+          <Input
+            id="nouveauMotDePasse"
+            type={afficherNouveau ? "text" : "password"}
+            value={nouveauMotDePasse}
+            onChange={(e) => setNouveauMotDePasse(e.target.value)}
+            minLength={8}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setAfficherNouveau((v) => !v)}
+            className="absolute right-0 top-0 flex h-full w-10 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+            tabIndex={-1}
+            aria-label={afficherNouveau ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {afficherNouveau ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="confirmation">Confirmer le nouveau mot de passe</Label>
-        <Input
-          id="confirmation"
-          type="password"
-          value={confirmation}
-          onChange={(e) => setConfirmation(e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            id="confirmation"
+            type={afficherConfirmation ? "text" : "password"}
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setAfficherConfirmation((v) => !v)}
+            className="absolute right-0 top-0 flex h-full w-10 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+            tabIndex={-1}
+            aria-label={afficherConfirmation ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {afficherConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {erreur && <p className="text-sm text-red-600">{erreur}</p>}

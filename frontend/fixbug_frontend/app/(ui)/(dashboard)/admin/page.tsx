@@ -1,4 +1,5 @@
 "use client";
+
 import { ShieldUser, User } from 'lucide-react';
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, MoreVertical, Ban, CheckCircle2, Trash2 } from "lucide-react";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner"; // Utilisation directe de sonner
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -60,6 +62,9 @@ export default function UtilisateursAdminPage() {
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
+      toast.error("Erreur", {
+        description: "Impossible de charger la liste des utilisateurs.",
+      });
     } finally {
       setChargement(false);
     }
@@ -75,9 +80,23 @@ export default function UtilisateursAdminPage() {
       : `/users/admin/utilisateurs/${utilisateur.id}/activer`;
     try {
       await apiFetch(chemin, { method: "PATCH" });
+      
+      if (utilisateur.actif) {
+        toast.warning("Compte désactivé", {
+          description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été désactivé.`,
+        });
+      } else {
+        toast.success("Compte activé", {
+          description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été activé.`,
+        });
+      }
+
       chargerUtilisateurs();
     } catch (err) {
       console.error(err);
+      toast.error("Erreur", {
+        description: `Erreur lors de la modification du statut de ${utilisateur.prenom}.`,
+      });
     }
   }
 
@@ -86,10 +105,18 @@ export default function UtilisateursAdminPage() {
     setSuppressionEnCours(true);
     try {
       await apiFetch(`/users/admin/utilisateurs/${utilisateurASupprimer.id}`, { method: "DELETE" });
+      
+      toast.success("Utilisateur supprimé", {
+        description: `Le compte de ${utilisateurASupprimer.prenom} ${utilisateurASupprimer.nom} a été supprimé.`,
+      });
+
       setUtilisateurASupprimer(null);
       chargerUtilisateurs();
     } catch (err) {
       console.error(err);
+      toast.error("Erreur", {
+        description: "Erreur lors de la suppression de l'utilisateur.",
+      });
     } finally {
       setSuppressionEnCours(false);
     }
@@ -99,7 +126,7 @@ export default function UtilisateursAdminPage() {
     <div>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#12151F]">Utilisateurs</h1>
+          <h1 className="text-2xl font-bold text-brand-ink">Utilisateurs</h1>
           <p className="text-sm text-slate-500">Gérez les comptes de la plateforme.</p>
         </div>
         <DialogNouvelUtilisateur
@@ -122,8 +149,8 @@ export default function UtilisateursAdminPage() {
         />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <Table className="border rounded-2xl">
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <Table>
           <TableHeader>
             <TableRow className="bg-black hover:bg-black">
               <TableHead className="text-white">Nom complet</TableHead>
@@ -152,22 +179,34 @@ export default function UtilisateursAdminPage() {
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={utilisateur.role === "CHEF_PROJET" ? "font-normal bg-sky-50 text-sky-900 gap-1" : "font-normal bg-green-50 text-green-900 gap-1"}
+                      className={
+                        utilisateur.role === "CHEF_PROJET"
+                          ? "font-normal bg-sky-50 text-sky-900 gap-1"
+                          : "font-normal bg-green-50 text-green-900 gap-1"
+                      }
                     >
-                      {utilisateur.role === "CHEF_PROJET" ? <ShieldUser className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                      {utilisateur.role === "CHEF_PROJET" ? (
+                        <ShieldUser className="h-3.5 w-3.5" />
+                      ) : (
+                        <User className="h-3.5 w-3.5" />
+                      )}
                       {labelsRole[utilisateur.role]}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={utilisateur.actif ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}>
+                    <Badge
+                      className={
+                        utilisateur.actif
+                          ? "bg-emerald-50 text-emerald-900"
+                          : "bg-red-50 text-red-700"
+                      }
+                    >
                       {utilisateur.actif ? "Actif" : "Désactivé"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <DropdownMenu>
-                        {/* Pas de asChild/render ici : le Trigger est lui-même le bouton cliquable,
-                            on ne lui donne pas d'élément à remplacer, juste du contenu à l'intérieur. */}
                         <DropdownMenuTrigger className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
                           <MoreVertical className="h-4 w-4" />
                         </DropdownMenuTrigger>
@@ -200,18 +239,35 @@ export default function UtilisateursAdminPage() {
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-slate-500">Page {page} sur {totalPages}</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
-            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Précédent
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Suivant
+            </Button>
           </div>
         </div>
       )}
 
-      <AlertDialog open={!!utilisateurASupprimer} onOpenChange={(ouvert) => !ouvert && setUtilisateurASupprimer(null)}>
+      <AlertDialog
+        open={!!utilisateurASupprimer}
+        onOpenChange={(ouvert) => !ouvert && setUtilisateurASupprimer(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>voulez vous supprimer cet utilisateur ?</AlertDialogTitle>
+            <AlertDialogTitle>Voulez-vous supprimer cet utilisateur ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible.l'utilisateur {utilisateurASupprimer?.prenom}  perdra l'accès à la plateforme.
+              Cette action est irréversible. L'utilisateur {utilisateurASupprimer?.prenom} perdra l'accès à la plateforme.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -233,17 +289,23 @@ export default function UtilisateursAdminPage() {
 function LigneSkeleton() {
   return (
     <TableRow>
-      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-      <TableCell className="flex justify-end"><Skeleton className="h-8 w-8 rounded" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-36 rounded" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-48 rounded" /></TableCell>
+      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+      <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+        </div>
+      </TableCell>
     </TableRow>
   );
 }
 
 function DialogNouvelUtilisateur({
-  ouvert, onOuvertChange, onCree,
+  ouvert,
+  onOuvertChange,
+  onCree,
 }: {
   ouvert: boolean;
   onOuvertChange: (v: boolean) => void;
@@ -265,11 +327,20 @@ function DialogNouvelUtilisateur({
         method: "POST",
         body: JSON.stringify({ nom, prenom, email, role }),
       });
+
+      toast.success("Utilisateur créé", {
+        description: `Le compte de ${prenom} ${nom} a été créé avec succès.`,
+      });
+
       setNom(""); setPrenom(""); setEmail(""); setRole("TESTEUR");
       onOuvertChange(false);
       onCree();
     } catch (err) {
-      setErreur(err instanceof Error ? err.message : "Erreur lors de la création");
+      const message = err instanceof Error ? err.message : "Erreur lors de la création";
+      setErreur(message);
+      toast.error("Erreur de création", {
+        description: message,
+      });
     } finally {
       setChargement(false);
     }
@@ -277,11 +348,13 @@ function DialogNouvelUtilisateur({
 
   return (
     <Dialog open={ouvert} onOpenChange={onOuvertChange}>
-      <DialogTrigger render={<Button className="bg-[#12151F] hover:bg-[#12151F]/90" />}>
+      <DialogTrigger className="inline-flex items-center justify-center rounded-lg bg-[#12151F] px-4 py-2 text-sm font-medium text-white hover:bg-[#12151F]/90 transition-colors">
         <Plus className="mr-2 h-4 w-4" /> Nouvel utilisateur
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Créer un utilisateur</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Créer un utilisateur</DialogTitle>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

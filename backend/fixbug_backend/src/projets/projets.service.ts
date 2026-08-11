@@ -19,7 +19,7 @@ export class ProjetsService {
                 nom: projet.nom,
                 description: projet.description,
                 liengit: projet.lienGithub,
-                technologie: projet.technologies ?? [],
+                technologies: projet.technologies ?? [],
                 chefProjetId,
             },
         })
@@ -93,7 +93,7 @@ export class ProjetsService {
       ...(data.nom && { nom: data.nom }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.lienGithub && { liengit: data.lienGithub }),         
-      ...(data.technologies && { technologie: data.technologies }),   
+      ...(data.technologies && { technologies: data.technologies }),   
     },
         })
     }
@@ -120,4 +120,23 @@ export class ProjetsService {
             throw new  NotFoundException("vous n'etes pas collaborateur de ce projet")
         }
     }
+
+    // obtenir projet
+    async obtenirProjet(projetId: number, utilisateur: { id: number; role: string }) {
+  const projet = await this.prisma.projet.findUnique({
+    where: { id: projetId },
+    include: { _count: { select: { bugs: true, collaborateurs: true } } },
+  });
+  if (!projet) throw new NotFoundException('Projet introuvable');
+
+  const estProprietaire = projet.chefProjetId === utilisateur.id;
+  const estCollaborateur = await this.prisma.projetCollaborateur.findUnique({
+    where: { projetId_utilisateurId: { projetId, utilisateurId: utilisateur.id } },
+  });
+  if (!estProprietaire && !estCollaborateur) {
+    throw new ForbiddenException("Vous n'avez pas accès à ce projet");
+  }
+
+  return { ...projet, estProprietaire };
+}
 }

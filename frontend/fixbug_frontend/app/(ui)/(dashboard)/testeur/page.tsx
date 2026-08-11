@@ -1,4 +1,4 @@
-export default function Dashboardchef() {
+export default function DashboardTesteur() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-brand-ink">Tableau de bord</h1>

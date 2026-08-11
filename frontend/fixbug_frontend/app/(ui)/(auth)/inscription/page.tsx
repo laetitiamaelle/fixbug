@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft,FolderKanban, Bug, Loader2 } from "lucide-react";
+import { ArrowLeft,FolderKanban, Bug, Loader2 ,EyeOff,Eye} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,9 @@ export default function InscriptionPage() {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    // etats pour afficher/masquer les mots de passe
+    const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
+    const [afficherConfirmation, setAfficherConfirmation] = useState(false);
 
     // variable de pour l'api
     const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -172,12 +175,51 @@ export default function InscriptionPage() {
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Mot de passe</Label>
-                                    <Input id="motdepasse" type="password" required minLength={8} placeholder="••••••••" onChange={handleChange} value={formData.motdepasse} />
+                                    <Label htmlFor="motdepasse">Mot de passe</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="motdepasse"
+                                            type={afficherMotDePasse ? "text" : "password"}
+                                            required
+                                            minLength={8}
+                                            placeholder="••••••••"
+                                            onChange={handleChange}
+                                            value={formData.motdepasse}
+                                            className="pr-9"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setAfficherMotDePasse((v) => !v)}
+                                            className="absolute right-0 top-0 flex h-full w-9 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+                                            tabIndex={-1}
+                                            aria-label={afficherMotDePasse ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                        >
+                                            {afficherMotDePasse ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="confirm">Confirmation</Label>
-                                    <Input id="confirmation" type="password" required placeholder="••••••••" onChange={handleChange} value={formData.confirmation} />
+                                    <Label htmlFor="confirmation">Confirmation</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="confirmation"
+                                            type={afficherConfirmation ? "text" : "password"}
+                                            required
+                                            placeholder="••••••••"
+                                            onChange={handleChange}
+                                            value={formData.confirmation}
+                                            className="pr-9"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setAfficherConfirmation((v) => !v)}
+                                            className="absolute right-0 top-0 flex h-full w-9 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+                                            tabIndex={-1}
+                                            aria-label={afficherConfirmation ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                        >
+                                            {afficherConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

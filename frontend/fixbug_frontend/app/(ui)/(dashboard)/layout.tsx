@@ -1,5 +1,5 @@
 "use client";
-
+import { SidebarProvider } from "@/context/sidebar-context";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/auth-context";
@@ -31,6 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+      <SidebarProvider>
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -38,5 +39,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
+    </SidebarProvider>
   );
 }

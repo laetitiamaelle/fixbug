@@ -31,6 +31,7 @@ model Utilisateur {
   collaborations ProjetCollaborateur[]
   invitations Invitation[]
   notifications Notification[]
+  bugsDeclares Bug[]
   @@map("utilisateurs")
 }
 
@@ -39,13 +40,14 @@ model Projet {
   nom String
   description String
   liengit String
-  technologie String[]
+  technologies String[]
   chefProjetId   Int
   chefProjet     Utilisateur           @relation("ProjetsCrees", fields: [chefProjetId], references: [id])
   collaborateurs ProjetCollaborateur[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   invitations Invitation[]
+  bugs Bug[]
   @@map("projets")
 }
 
@@ -56,7 +58,6 @@ model ProjetCollaborateur {
   utilisateurId Int
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
   dateAjout     DateTime    @default(now())
-
   @@unique([projetId, utilisateurId])
   @@map("projet_collaborateurs")
 }
@@ -87,3 +88,26 @@ model Notification{
   dateEnvoie DateTime @default(now())
   @@map("notifications")
 } 
+
+enum StatutBug {
+  EN_COURS_DE_TRAITEMENT
+  EN_ATTENTE_VALIDATION
+  BLOQUE
+  RESOLU
+}
+
+model Bug {
+  id          Int       @id @default(autoincrement())
+  titre       String?
+  description String
+  captures    String[]
+  statut      StatutBug @default(EN_COURS_DE_TRAITEMENT)
+  projetId    Int
+  projet      Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  testeurId   Int
+  testeur     Utilisateur @relation(fields: [testeurId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("bugs")
+}
