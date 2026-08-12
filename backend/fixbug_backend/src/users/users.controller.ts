@@ -60,10 +60,11 @@ export class UsersController {
 @Roles('ADMINISTRATEUR')
 listerUtilisateurs(
   @Query('page') page = '1',
-  @Query('limit') limit = '2',
+  @Query('limit') limit = '',
   @Query('recherche') recherche?: string,
+  @Query('statut') statut?: string,
 ) {
-  return this.userService.listerUtilisateursAdmin(Number(page), Number(limit), recherche);
+  return this.userService.listerUtilisateursAdmin(Number(page), Number(limit), recherche, statut);
 }
 
     @Patch('admin/utilisateurs/:id/activer')

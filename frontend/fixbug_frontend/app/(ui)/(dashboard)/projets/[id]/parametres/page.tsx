@@ -17,7 +17,7 @@ export default function ParametresProjetPage() {
   const router = useRouter();
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
-  const [lienGithub, setLienGithub] = useState("");
+  const [liengit, setLienGithub] = useState("");
   const [chargement, setChargement] = useState(false);
   const [succes, setSucces] = useState(false);
 
@@ -36,7 +36,7 @@ export default function ParametresProjetPage() {
     try {
       await apiFetch(`/projets/${params.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ nom, description, lienGithub }),
+        body: JSON.stringify({ nom, description, liengit }),
       });
       setSucces(true);
     } finally {
@@ -54,26 +54,24 @@ export default function ParametresProjetPage() {
       <form onSubmit={handleEnregistrer} className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
         <div className="space-y-2"><Label htmlFor="nom">Nom du projet</Label><Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} /></div>
         <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} /></div>
-        <div className="space-y-2"><Label htmlFor="lienGithub">Dépôt GitHub</Label><Input id="lienGithub" value={lienGithub} onChange={(e) => setLienGithub(e.target.value)} /></div>
+        <div className="space-y-2"><Label htmlFor="lienGithub">Dépôt GitHub</Label><Input id="lienGithub" value={liengit} onChange={(e) => setLienGithub(e.target.value)} /></div>
         {succes && <p className="text-sm text-emerald-600">Modifications enregistrées.</p>}
         <div className="flex justify-end border-t border-slate-100 pt-4">
           <Button type="submit" disabled={chargement} className="bg-[#12151F] hover:bg-[#12151F]/90">
-            {chargement ? "Enregistrement..." : "Enregistrer"}
+            {chargement ? "Enregistrement..." : "modifier"}
           </Button>
         </div>
       </form>
 
       <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-        <h3 className="mb-1 font-semibold text-red-700">Zone de danger</h3>
-        <p className="mb-4 text-sm text-red-600">La suppression est irréversible et supprime tous les bugs associés.</p>
+        
         <AlertDialog>
-          {/* CORRIGÉ (Base UI) : render={<Button ... />} vide, le texte reste dans les enfants */}
           <AlertDialogTrigger render={<Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-100" />}>
             Supprimer ce projet
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer ce projet ?</AlertDialogTitle>
+              <AlertDialogTitle>voulez vous supprimer le projet ?</AlertDialogTitle>
               <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

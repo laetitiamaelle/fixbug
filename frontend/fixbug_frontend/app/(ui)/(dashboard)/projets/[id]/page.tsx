@@ -88,12 +88,12 @@ export default function ApercuProjetPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
       {/* Fenêtre de chat */}
-      <div className="flex h-[calc(100vh-220px)] flex-col rounded-xl border border-slate-200 bg-white">
+      <div className="flex h-[calc(100vh-200px)] flex-col rounded-xl border border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="font-semibold text-[#12151F]">Agent IA — Fixbug</h2>
-          <p className="text-sm text-slate-500">Décrivez un bug, l&apos;agent l&apos;analyse et propose une correction.</p>
+          <p className="text-sm text-slate-500">Décrivez un bug, l'agent l'analyse et propose une correction.</p>
         </div>
 
         {/* Fil de conversation */}
@@ -182,28 +182,31 @@ export default function ApercuProjetPage() {
 function MessageBug({ message, estMoi }: { message: BugMessage; estMoi: boolean }) {
   const statut = configStatut[message.statut];
   const Icone = statut.icone;
+  const initiales = `${message.testeur.prenom[0]}${message.testeur.nom[0]}`.toUpperCase();
 
   return (
-    <div className={`flex ${estMoi ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[80%] space-y-2`}>
-        {/* Bulle du testeur : description + éventuelles captures */}
-        <div className={`rounded-2xl px-4 py-2.5 ${estMoi ? "rounded-br-sm bg-[#12151F] text-white" : "rounded-bl-sm bg-slate-100 text-[#12151F]"}`}>
-          <p className="text-sm">{message.description}</p>
-          {message.captures.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {message.captures.map((url, i) => (
-                <a key={i} href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-xs">
-                  <ImageIcon className="h-3 w-3" /> Capture {i + 1}
-                </a>
-              ))}
-            </div>
-          )}
+    <div className={`flex gap-3 rounded-lg p-3 ${estMoi ? "bg-slate-50" : "bg-white"}`}>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#12151F] text-xs font-semibold text-white">
+        {initiales}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-[#12151F]">{message.testeur.prenom} {message.testeur.nom}</span>
+          <span className="text-xs text-slate-400">{new Date(message.createdAt).toLocaleString("fr-FR")}</span>
         </div>
-        {/* "Réponse" système reflétant le statut actuel du traitement */}
-        <div className={`flex items-center gap-1.5 text-xs text-slate-500 ${estMoi ? "justify-end" : "justify-start"}`}>
+        <p className="mt-1 text-sm text-slate-700">{message.description}</p>
+        {message.captures.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {message.captures.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-md border border-slate-200">
+                <img src={url} alt="" className="h-16 w-24 object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
+        <div className="mt-2 flex items-center gap-1.5 text-xs">
           <Icone className="h-3 w-3" />
           <span className={`rounded px-1.5 py-0.5 ${statut.classe}`}>{statut.label}</span>
-          <span>· {new Date(message.createdAt).toLocaleString("fr-FR")}</span>
         </div>
       </div>
     </div>

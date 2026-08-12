@@ -313,7 +313,7 @@ export default function InscriptionPage() {
 
                         <p className="mt-8 text-center text-sm text-slate-500">
                             Vous avez déjà un compte ?
-                            <Link href="/auth/connexion" className="font-semibold text-slate-900">
+                            <Link href="/connexion" className="font-semibold text-slate-900">
                                 Connectez-vous
                             </Link>
                         </p>

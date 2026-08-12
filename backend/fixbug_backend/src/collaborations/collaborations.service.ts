@@ -79,7 +79,7 @@ export class CollaborationsService {
         }
     }
 
-    //------------lister lesinvitations dun testeur-------
+    //------------lister les invitations dun testeur-------
     async listerInvitationsTesteur(utilisateurId){
         return await this.prisma.invitation.findMany({
             where:{
@@ -119,6 +119,7 @@ export class CollaborationsService {
     }
 
     //------------accepter invitattion------------
+    
      async AccepteInvitation(invitationId,utilisateurId){
      const invitation = await this.verifierProprietaireInvitation(utilisateurId,invitationId)
      await this.prisma.invitation.update({
@@ -130,4 +131,26 @@ export class CollaborationsService {
       })
      return {message:`vous avez accepter l'invitation au projet`}
     }
+
+    // lister les invitations envoyer par  le chef projet
+    async listerInvitationsProjet(projetId: number, chefProjetId: number) {
+  await this.verifierProprietaire(projetId, chefProjetId);
+  return this.prisma.invitation.findMany({
+    where: { projetId, statut: 'EN_ATTENTE' },
+    include: { utilisateur: { select: { id: true, nom: true, prenom: true, email: true } } },
+    orderBy: { dateEnvoie: 'desc' },
+  });
+}
+
+//--------------------annuler une invitation-----------------
+
+async annulerInvitation(projetId: number, chefProjetId: number, invitationId: number) {
+  await this.verifierProprietaire(projetId, chefProjetId);
+  const invitation = await this.prisma.invitation.findUnique({ where: { id: invitationId } });
+  if (!invitation || invitation.projetId !== projetId) {
+    throw new NotFoundException('Invitation introuvable');
+  }
+  await this.prisma.invitation.delete({ where: { id: invitationId } });
+  return { message: 'Invitation annulée' };
+}
 }

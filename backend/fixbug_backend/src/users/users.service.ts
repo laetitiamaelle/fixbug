@@ -143,25 +143,34 @@ async supprimerUtilisateur(id: number) {
 }
 //-----------------------lister les utilisateur -------------------
 
-async listerUtilisateursAdmin(page: number, limit: number, recherche?: string) {
-  const where = recherche
-    ? {
-        OR: [
-          { nom: { contains: recherche, mode: 'insensitive' as const } },
-          { prenom: { contains: recherche, mode: 'insensitive' as const } },
-          { email: { contains: recherche, mode: 'insensitive' as const } },
-        ],
-      }
-    : {};
+async listerUtilisateursAdmin(
+  page: number,
+  limit: number,
+  recherche?: string,
+  statut?: string,
+) {
+  const conditions: any[] = [
+    { OR: [{ role: 'CHEF_PROJET' }, { role: 'TESTEUR' }] },
+  ];
+
+  if (recherche) {
+    conditions.push({
+      OR: [
+        { nom: { contains: recherche, mode: 'insensitive' as const } },
+        { prenom: { contains: recherche, mode: 'insensitive' as const } },
+        { email: { contains: recherche, mode: 'insensitive' as const } },
+      ],
+    });
+  }
+
+  if (statut === 'actif') conditions.push({ actif: true });
+  if (statut === 'desactive') conditions.push({ actif: false });
+
+  const where = { AND: conditions };
 
   const [data, total] = await Promise.all([
     this.prisma.utilisateur.findMany({
-      where:{
-        OR:[
-          {role:"CHEF_PROJET"},
-          {role:"TESTEUR"}
-        ]
-      },
+      where,
       select: { id: true, nom: true, prenom: true, email: true, role: true, actif: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
