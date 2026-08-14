@@ -90,4 +90,42 @@ async function testerModification() {
   await modifierFichier('README.md', nouveauTexte, 'test', lecture.data.sha);
 }
 
-testerModification();
+// testerModification();
+
+// creer un pull request
+
+async function ouvrirPullRequest(nomBranche, titre, description) {
+  const reponse = await octokit.rest.pulls.create({
+    owner: 'laetitiamaelle',
+    repo: 'fixbug',
+    title: titre,
+    body: description,
+    head: nomBranche, // la branche qui contient les changements
+    base: 'main',     // la branche qui va "recevoir" les changements, une fois validée
+  });
+
+  console.log('Pull Request créée :', reponse.data.html_url);
+  console.log('Numéro de la PR :', reponse.data.number);
+
+  return reponse.data;
+}
+
+ouvrirPullRequest(
+  'test',
+  'Correction automatique : test Fixbug',
+  'Cette PR a été générée automatiquement par l\'agent IA de Fixbug.\n\nFichier modifié : README.md'
+);
+
+// Vérifier l'état actuel d'une PR précise (ouverte ? fusionnée ? fermée ?)
+async function verifierStatutPR(numeroPR) {
+  const reponse = await octokit.rest.pulls.get({
+    owner: 'laetitiamaelle',
+    repo: 'fixbug',
+    pull_number: numeroPR,
+  });
+
+  console.log('État :', reponse.data.state);       // 'open' ou 'closed'
+  console.log('Fusionnée ?', reponse.data.merged);  // true ou false
+}
+
+verifierStatutPR(1); // remplace 1 par le numéro réel de ta PR

@@ -47,7 +47,6 @@ export default function ProjetLayout({ children }: { children: React.ReactNode }
 
       <h1 className="mb-4 text-2xl font-bold text-[#12151F]">{projet?.nom ?? "..."}</h1>
 
-      {/* NOUVEAU : la barre d'onglets n'apparaît pas du tout pour un Testeur */}
       {!estTesteur && (
         <div className="mb-6 flex gap-1 border-b border-slate-200">
           {onglets.map((onglet) => {
