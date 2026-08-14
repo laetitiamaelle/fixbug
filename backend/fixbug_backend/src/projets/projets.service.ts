@@ -139,4 +139,41 @@ export class ProjetsService {
 
   return { ...projet, estProprietaire };
 }
+
+async obtenirStatistiques(chefProjetId: number) {
+  const projets = await this.prisma.projet.findMany({
+    where: { chefProjetId },
+    select: { id: true },
+  });
+  const projetIds = projets.map((p) => p.id);
+
+  const [collaborateurs, bugsParStatut] = await Promise.all([
+    // NOUVEAU : distinct évite de compter plusieurs fois le même testeur
+    // s'il collabore sur plusieurs de tes projets
+    this.prisma.projetCollaborateur.findMany({
+      where: { projetId: { in: projetIds } },
+      select: { utilisateurId: true },
+      distinct: ['utilisateurId'],
+    }),
+    // NOUVEAU : groupBy fait le comptage par statut directement en base,
+    // plus rapide que de tout récupérer et compter côté Node
+    this.prisma.bug.groupBy({
+      by: ['statut'],
+      where: { projetId: { in: projetIds } },
+      _count: true,
+    }),
+  ]);
+
+  const compteur = { EN_COURS_DE_TRAITEMENT: 0, EN_ATTENTE_VALIDATION: 0, BLOQUE: 0, RESOLU: 0 };
+  bugsParStatut.forEach((b) => { compteur[b.statut] = b._count; });
+
+  return {
+    nombreProjets: projetIds.length,
+    nombreCollaborateurs: collaborateurs.length,
+    nombreBugs: Object.values(compteur).reduce((a, b) => a + b, 0),
+    bugsCorriges: compteur.RESOLU,
+    bugsEnAttente: compteur.EN_ATTENTE_VALIDATION,
+    bugsNonCorriges: compteur.EN_COURS_DE_TRAITEMENT + compteur.BLOQUE,
+  };
+}
 }

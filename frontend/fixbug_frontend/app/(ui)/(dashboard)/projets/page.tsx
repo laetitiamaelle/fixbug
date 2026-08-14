@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Folder, FolderGit2 } from "lucide-react";
+import { Plus, Folder, FolderGit2 ,FolderOpenDot} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
+import {Card} from "@/components/ui/card"
 
 type Projet = { id: number; nom: string };
 
@@ -58,9 +59,9 @@ export default function ProjetsPage() {
               className="flex flex-col items-center gap-1.5 rounded-xl p-3 text-center transition-colors hover:bg-slate-100"
             >
               <div className="flex h-16 w-16 items-center justify-center">
-                <Folder
-                  className="h-14 w-14 fill-[#f7f8fc] text-[#12151F] drop-shadow-sm"
-                  strokeWidth={1.5}
+                <FolderOpenDot
+                  className="h-26 w-26 fill-brand-slate text-[#353b4e] drop-shadow-sm"
+                  strokeWidth={1}
                 />
               </div>
               <span className="line-clamp-2 text-sm font-medium text-[#12151F]">{projet.nom}</span>

@@ -1,5 +1,5 @@
 "use client";
-
+import { useAuth } from "@/context/auth-context";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ export default function ConnexionPage() {
     const [email, setEmail] = useState("");
     const [motdepasse, setMotdepasse] = useState("");
     const [loading, setLoading] = useState(false);
+     const { rafraichir } = useAuth();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -59,9 +60,10 @@ export default function ConnexionPage() {
             
             if (data.access_token || data.token) {
                 localStorage.setItem("token", data.access_token || data.token);
+                await rafraichir()
             }
 
-            console.log("=== RÉPONSE DE L'API LOGIN ===", data);
+            console.log("=== REPONSE DE L'API LOGIN ===", data);
             const userRole = data.utilisateur?.role || data.user?.role || data.role;
             if (userRole === "CHEF_PROJET") {
                 router.push("/chef_projet");

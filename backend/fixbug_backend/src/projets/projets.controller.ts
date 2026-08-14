@@ -41,7 +41,12 @@ export class ProjetsController {
     async supprimerProjet(@Param('id', ParseIntPipe) projetId: number, @CurrentUser() utilisateur: { id: number }) {
         return this.projetService.supprimerProjet(projetId, utilisateur.id)
     }
-
+    @Get('statistiques')
+    @UseGuards(RolesGuard)
+    @Roles('CHEF_PROJET')
+    obtenirStatistiques(@CurrentUser() utilisateur: { id: number }) {
+        return this.projetService.obtenirStatistiques(utilisateur.id);
+    }
     @Get(':id')
     obtenirProjet(
         @Param('id', ParseIntPipe) id: number,
@@ -49,7 +54,7 @@ export class ProjetsController {
     ) {
         return this.projetService.obtenirProjet(id, utilisateur);
     }
-    
+
     @Delete(':id/quitter')
     async quitterProjet(@Param('id', ParseIntPipe) projetId: number, @CurrentUser() utilisateur: { id: number }) {
         return this.projetService.quitterProjet(projetId, utilisateur.id)

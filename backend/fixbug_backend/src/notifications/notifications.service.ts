@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable ,NotFoundException} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class NotificationsService {
@@ -17,4 +17,23 @@ export class NotificationsService {
       orderBy:{dateEnvoie:'desc'}
     })
   }
+
+  async marquerCommeLue(id: number, utilisateurId: number) {
+  const notif = await this.prisma.notification.findUnique({ where: { id } });
+  if (!notif || notif.utilisateurId !== utilisateurId) throw new NotFoundException('Notification introuvable');
+  return this.prisma.notification.update({ where: { id }, data: { lue: true } });
+}
+
+async marquerToutesCommeLues(utilisateurId: number) {
+  await this.prisma.notification.updateMany({ where: { utilisateurId, lue: false }, data: { lue: true } });
+  return { message: 'Toutes les notifications ont été marquées comme lues' };
+}
+async supprimerNotification(id: number, utilisateurId: number) {
+  const notif = await this.prisma.notification.findUnique({ where: { id } });
+  if (!notif || notif.utilisateurId !== utilisateurId) {
+    throw new NotFoundException('Notification introuvable');
+  }
+  await this.prisma.notification.delete({ where: { id } });
+  return { message: 'Notification supprimée' };
+}
 }

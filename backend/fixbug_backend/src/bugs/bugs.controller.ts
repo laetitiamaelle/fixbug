@@ -14,7 +14,6 @@ export class BugsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('TESTEUR')
   @UseInterceptors(FilesInterceptor('captures', 5))
   declarerBug(
     @CurrentUser() utilisateur: { id: number },

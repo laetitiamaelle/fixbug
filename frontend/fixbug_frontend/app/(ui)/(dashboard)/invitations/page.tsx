@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Mail, Check, X, FolderGit2 } from "lucide-react";
+import { Mail, Check, X, FolderGit2 ,UserRoundPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { toast } from "sonner"
 
 type Invitation = {
   id: number;
@@ -17,34 +18,36 @@ export default function InvitationsPage() {
   const [enTraitement, setEnTraitement] = useState<number | null>(null);
 
   const chargerInvitations = useCallback(() => {
-    apiFetch("/invitations").then(setInvitations).catch(() => setInvitations([]));
+    apiFetch("/collaborations/invitations").then(setInvitations).catch(() => setInvitations([]));
   }, []);
 
   useEffect(() => { chargerInvitations(); }, [chargerInvitations]);
 
   async function handleAccepter(id: number) {
-    setEnTraitement(id);
-    try {
-      await apiFetch(`/invitations/${id}/accepterinvitation`, { method: "PATCH" });
-      chargerInvitations(); 
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setEnTraitement(null);
-    }
+  setEnTraitement(id);
+  try {
+    await apiFetch(`/collaborations/invitations/${id}/accepterinvitation`, { method: "PATCH" });
+    toast.success("Invitation acceptée — vous avez maintenant accès au projet");
+    chargerInvitations();
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : "Erreur lors de l'acceptation");
+  } finally {
+    setEnTraitement(null);
   }
+}
 
-  async function handleRefuser(id: number) {
-    setEnTraitement(id);
-    try {
-      await apiFetch(`/invitations/${id}/refuserinvitation`, { method: "PATCH" });
-      chargerInvitations();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setEnTraitement(null);
-    }
+async function handleRefuser(id: number) {
+  setEnTraitement(id);
+  try {
+    await apiFetch(`/collaborations/invitations/${id}/refuserinvitation`, { method: "PATCH" });
+    toast.success("Invitation refusée");
+    chargerInvitations();
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : "Erreur lors du refus");
+  } finally {
+    setEnTraitement(null);
   }
+}
 
   return (
     <div>
@@ -76,13 +79,11 @@ export default function InvitationsPage() {
             >
               <div className="flex items-start gap-3.5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                  <FolderGit2 className="h-4 w-4" />
+                  <UserRoundPlus  className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#12151F]">{invitation.projet.nom}</p>
-                  {invitation.projet.description && (
-                    <p className="text-sm text-slate-500">{invitation.projet.description}</p>
-                  )}
+                  <p className="font-medium text-[#12151F]"> vous etes invites a rejoindre le projet : <strong>{invitation.projet.nom}</strong></p>
+                  
                   <p className="mt-0.5 text-xs text-slate-400">
                     Invité le {new Date(invitation.dateEnvoie).toLocaleDateString("fr-FR")}
                   </p>

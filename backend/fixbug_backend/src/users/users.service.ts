@@ -252,4 +252,20 @@ async rechercherUtilisateur(projetId: number, motCle: string) {
     select: { id: true, nom: true, prenom: true, email: true },
   });
 }
+
+// ---------------------statistiques (dashboard admin) ----------------------
+
+async obtenirStatistiques() {
+  const filtreRoles = { OR: [{ role: 'CHEF_PROJET' as const }, { role: 'TESTEUR' as const }] };
+
+  const [total, actifs, desactives, testeurs, chefsProjet] = await Promise.all([
+    this.prisma.utilisateur.count({ where: filtreRoles }),
+    this.prisma.utilisateur.count({ where: { ...filtreRoles, actif: true } }),
+    this.prisma.utilisateur.count({ where: { ...filtreRoles, actif: false } }),
+    this.prisma.utilisateur.count({ where: { role: 'TESTEUR' } }),
+    this.prisma.utilisateur.count({ where: { role: 'CHEF_PROJET' } }),
+  ]);
+
+  return { total, actifs, desactives, testeurs, chefsProjet };
+}
 }

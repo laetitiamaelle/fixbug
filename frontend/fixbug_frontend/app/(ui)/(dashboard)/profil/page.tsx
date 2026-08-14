@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2 ,EyeOff,Eye} from "lucide-react";
+import { CheckCircle2 ,EyeOff,Eye,User} from "lucide-react";
 
 const labelsRole: Record<string, string> = {
   TESTEUR: "Testeur",
@@ -22,7 +22,8 @@ export default function ParametresPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#12151F]">Paramètres</h1>
+        
+        <h1 className="text-2xl font-bold text-[#12151F]"> <User/> Profil</h1>
         <p className="text-sm text-slate-500">Gérez vos informations personnelles et votre sécurité.</p>
       </div>
 
@@ -78,7 +79,7 @@ function FormulaireInformations({
         method: "PATCH",
         body: JSON.stringify({ nom, prenom }),
       });
-      await onSucces(); // recharge l'utilisateur dans le contexte (pour mettre à jour Sidebar/Topbar)
+      await onSucces(); 
       setSucces(true);
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Erreur lors de la mise à jour");
@@ -105,7 +106,7 @@ function FormulaireInformations({
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" value={utilisateur.email} disabled className="bg-slate-50 text-slate-500" />
-        <p className="text-xs text-slate-400">L&apos;email ne peut pas être modifié pour l&apos;instant.</p>
+        <p className="text-xs text-slate-400">L'email ne peut pas être modifié </p>
       </div>
 
       {erreur && <p className="text-sm text-red-600">{erreur}</p>}
@@ -117,7 +118,7 @@ function FormulaireInformations({
 
       <div className="flex justify-end border-t border-slate-100 pt-4">
         <Button type="submit" disabled={chargement} className="bg-[#12151F] hover:bg-[#12151F]/90">
-          {chargement ? "Enregistrement..." : "Enregistrer"}
+          {chargement ? "Enregistrement..." : "modifier"}
         </Button>
       </div>
     </form>

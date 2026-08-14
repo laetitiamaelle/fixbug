@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useNotifications } from "@/context/notifications-context";
 import { Search, UserPen, Bell, ChevronDown, LogOut, Menu } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
@@ -19,20 +20,13 @@ export function Topbar() {
   const { ouvrir } = useSidebar();
   const router = useRouter();
   const [recherche, setRecherche] = useState("");
-  const [nonLues, setNonLues] = useState(0);
+  const { nonLues } = useNotifications(); 
 
-  // récupère le vrai nombre de notifications non lues
-  useEffect(() => {
-    if (!utilisateur) return;
-    apiFetch("/notifications")
-      .then((data: { lue: boolean }[]) => setNonLues(data.filter((n) => !n.lue).length))
-      .catch(() => setNonLues(0));
-  }, [utilisateur]);
+ 
 
   return (
     <header className="flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
       <div className="flex flex-1 items-center gap-3">
-        {/* Bouton hamburger : visible seulement en mobile/tablette */}
         <button
           onClick={ouvrir}
           className="shrink-0 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
@@ -41,15 +35,7 @@ export function Topbar() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher ..."
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-slate-400 focus:bg-white"
-          />
-        </div>
+        
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -71,7 +57,6 @@ export function Topbar() {
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12151F] text-sm font-semibold text-white">
                 {`${utilisateur.prenom[0]}${utilisateur.nom[0]}`.toUpperCase()}
               </div>
-              {/* Nom/rôle masqués sur mobile pour gagner de la place, avatar seul suffit */}
               <div className="hidden text-left sm:block">
                 <p className="text-sm font-medium leading-tight text-[#12151F]">{utilisateur.prenom} {utilisateur.nom}</p>
                 <p className="text-xs leading-tight text-slate-500">{labelsRole[utilisateur.role]}</p>

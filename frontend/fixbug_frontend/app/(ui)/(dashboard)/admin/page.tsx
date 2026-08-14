@@ -1,19 +1,10 @@
 "use client";
-
-import { ShieldUser, User } from 'lucide-react';
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, MoreVertical, Ban, CheckCircle2, Trash2 } from "lucide-react";
+import { StatsCards, StatistiquesUtilisateurs } from "../../../components/utilisateurs/stats-card";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner"; // Utilisation directe de sonner
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
@@ -26,49 +17,65 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
-
-type Utilisateur = {
-  id: number;
-  nom: string;
-  prenom: string;
-  email: string;
-  role: "TESTEUR" | "CHEF_PROJET" | "ADMINISTRATEUR";
-  actif: boolean;
-};
-
-const labelsRole: Record<string, string> = {
-  TESTEUR: "Testeur",
-  CHEF_PROJET: "Chef de projet",
-  ADMINISTRATEUR: "Administrateur",
-};
+import { DataTable } from "../../../components/utilisateurs/data-table";
+import { creerColonnes, Utilisateur } from "../../../components/utilisateurs/columns";
 
 export default function UtilisateursAdminPage() {
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [rechercheInput, setRechercheInput] = useState("");
   const [recherche, setRecherche] = useState("");
+  const [statut, setStatut] = useState<"TOUS" | "actif" | "desactive">("TOUS");
   const [dialogOuvert, setDialogOuvert] = useState(false);
   const [utilisateurASupprimer, setUtilisateurASupprimer] = useState<Utilisateur | null>(null);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
+  const [stats, setStats] = useState<StatistiquesUtilisateurs | null>(null);
+  const [statsChargement, setStatsChargement] = useState(true);
+
+  // débounce recherche : on attend 400ms après la dernière frappe avant d'appeler l'API
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(1);
+      setRecherche(rechercheInput);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [rechercheInput]);
+
+  const chargerStats = useCallback(async () => {
+    setStatsChargement(true);
+    try {
+      const data = await apiFetch("/users/admin/utilisateurs/statistiques");
+      setStats(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur", { description: "Impossible de charger les statistiques." });
+    } finally {
+      setStatsChargement(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    chargerStats();
+  }, [chargerStats]);
 
   const chargerUtilisateurs = useCallback(async () => {
     setChargement(true);
     try {
-      const data = await apiFetch(
-        `/users/admin/utilisateurs?page=${page}&limit=10&recherche=${encodeURIComponent(recherche)}`,
-      );
+      const params = new URLSearchParams({ page: String(page), limit: "6", recherche });
+      if (statut !== "TOUS") params.set("statut", statut);
+
+      const data = await apiFetch(`/users/admin/utilisateurs?${params.toString()}`);
       setUtilisateurs(data.data);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
-      toast.error("Erreur", {
-        description: "Impossible de charger la liste des utilisateurs.",
-      });
+      toast.error("Erreur", { description: "Impossible de charger la liste des utilisateurs." });
     } finally {
       setChargement(false);
     }
-  }, [page, recherche]);
+  }, [page, recherche, statut]);
 
   useEffect(() => {
     chargerUtilisateurs();
@@ -80,23 +87,15 @@ export default function UtilisateursAdminPage() {
       : `/users/admin/utilisateurs/${utilisateur.id}/activer`;
     try {
       await apiFetch(chemin, { method: "PATCH" });
-      
       if (utilisateur.actif) {
-        toast.warning("Compte désactivé", {
-          description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été désactivé.`,
-        });
+        toast.warning("Compte désactivé", { description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été désactivé.` });
       } else {
-        toast.success("Compte activé", {
-          description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été activé.`,
-        });
+        toast.success("Compte activé", { description: `Le compte de ${utilisateur.prenom} ${utilisateur.nom} a été activé.` });
       }
-
       chargerUtilisateurs();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur", {
-        description: `Erreur lors de la modification du statut de ${utilisateur.prenom}.`,
-      });
+      toast.error("Erreur", { description: `Erreur lors de la modification du statut de ${utilisateur.prenom}.` });
     }
   }
 
@@ -105,22 +104,24 @@ export default function UtilisateursAdminPage() {
     setSuppressionEnCours(true);
     try {
       await apiFetch(`/users/admin/utilisateurs/${utilisateurASupprimer.id}`, { method: "DELETE" });
-      
-      toast.success("Utilisateur supprimé", {
-        description: `Le compte de ${utilisateurASupprimer.prenom} ${utilisateurASupprimer.nom} a été supprimé.`,
-      });
-
+      toast.success("Utilisateur supprimé", { description: `Le compte de ${utilisateurASupprimer.prenom} ${utilisateurASupprimer.nom} a été supprimé.` });
       setUtilisateurASupprimer(null);
       chargerUtilisateurs();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur", {
-        description: "Erreur lors de la suppression de l'utilisateur.",
-      });
+      toast.error("Erreur", { description: "Erreur lors de la suppression de l'utilisateur." });
     } finally {
       setSuppressionEnCours(false);
     }
   }
+
+  const colonnes = useMemo(
+    () => creerColonnes({
+      onActiverDesactiver: handleActiverDesactiver,
+      onSupprimer: setUtilisateurASupprimer,
+    }),
+    []
+  );
 
   return (
     <div>
@@ -129,140 +130,44 @@ export default function UtilisateursAdminPage() {
           <h1 className="text-2xl font-bold text-brand-ink">Utilisateurs</h1>
           <p className="text-sm text-slate-500">Gérez les comptes de la plateforme.</p>
         </div>
-        <DialogNouvelUtilisateur
-          ouvert={dialogOuvert}
-          onOuvertChange={setDialogOuvert}
-          onCree={chargerUtilisateurs}
-        />
+        <DialogNouvelUtilisateur ouvert={dialogOuvert} onOuvertChange={setDialogOuvert} onCree={chargerUtilisateurs} />
+      </div>
+<div><StatsCards stats={stats} chargement={statsChargement} /></div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1 min-w-55">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Rechercher un utilisateur..."
+            className="pl-9"
+            value={rechercheInput}
+            onChange={(e) => setRechercheInput(e.target.value)}
+          />
+        </div>
+        <Select value={statut} onValueChange={(v) => { setPage(1); setStatut(v as typeof statut); }}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TOUS">Tous les statuts</SelectItem>
+            <SelectItem value="actif">Actif</SelectItem>
+            <SelectItem value="desactive">Désactivé</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="mb-4 relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <Input
-          placeholder="Rechercher un utilisateur..."
-          className="pl-9"
-          value={recherche}
-          onChange={(e) => {
-            setPage(1);
-            setRecherche(e.target.value);
-          }}
-        />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-black hover:bg-black">
-              <TableHead className="text-white">Nom complet</TableHead>
-              <TableHead className="text-white">Email</TableHead>
-              <TableHead className="text-white">Rôle</TableHead>
-              <TableHead className="text-white">Statut</TableHead>
-              <TableHead className="text-right text-white">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {chargement ? (
-              Array.from({ length: 5 }).map((_, i) => <LigneSkeleton key={i} />)
-            ) : utilisateurs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-slate-500">
-                  Aucun utilisateur trouvé.
-                </TableCell>
-              </TableRow>
-            ) : (
-              utilisateurs.map((utilisateur) => (
-                <TableRow key={utilisateur.id}>
-                  <TableCell className="font-medium text-[#12151F]">
-                    {utilisateur.prenom} {utilisateur.nom}
-                  </TableCell>
-                  <TableCell className="text-slate-600">{utilisateur.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        utilisateur.role === "CHEF_PROJET"
-                          ? "font-normal bg-sky-50 text-sky-900 gap-1"
-                          : "font-normal bg-green-50 text-green-900 gap-1"
-                      }
-                    >
-                      {utilisateur.role === "CHEF_PROJET" ? (
-                        <ShieldUser className="h-3.5 w-3.5" />
-                      ) : (
-                        <User className="h-3.5 w-3.5" />
-                      )}
-                      {labelsRole[utilisateur.role]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        utilisateur.actif
-                          ? "bg-emerald-50 text-emerald-900"
-                          : "bg-red-50 text-red-700"
-                      }
-                    >
-                      {utilisateur.actif ? "Actif" : "Désactivé"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
-                          <MoreVertical className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleActiverDesactiver(utilisateur)}>
-                            {utilisateur.actif ? (
-                              <><Ban className="mr-2 h-4 w-4" /> Désactiver</>
-                            ) : (
-                              <><CheckCircle2 className="mr-2 h-4 w-4" /> Activer</>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setUtilisateurASupprimer(utilisateur)}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable columns={colonnes} data={utilisateurs} chargement={chargement} />
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-slate-500">Page {page} sur {totalPages}</p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Précédent
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Suivant
-            </Button>
+            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
           </div>
         </div>
       )}
 
-      <AlertDialog
-        open={!!utilisateurASupprimer}
-        onOpenChange={(ouvert) => !ouvert && setUtilisateurASupprimer(null)}
-      >
+      <AlertDialog open={!!utilisateurASupprimer} onOpenChange={(o) => !o && setUtilisateurASupprimer(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Voulez-vous supprimer cet utilisateur ?</AlertDialogTitle>
@@ -272,11 +177,7 @@ export default function UtilisateursAdminPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmerSuppression}
-              disabled={suppressionEnCours}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={confirmerSuppression} disabled={suppressionEnCours} className="bg-red-600 hover:bg-red-700">
               {suppressionEnCours ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -286,31 +187,9 @@ export default function UtilisateursAdminPage() {
   );
 }
 
-function LigneSkeleton() {
-  return (
-    <TableRow>
-      <TableCell><Skeleton className="h-5 w-36 rounded" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-48 rounded" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end">
-          <Skeleton className="h-8 w-8 rounded-lg" />
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
-
 function DialogNouvelUtilisateur({
-  ouvert,
-  onOuvertChange,
-  onCree,
-}: {
-  ouvert: boolean;
-  onOuvertChange: (v: boolean) => void;
-  onCree: () => void;
-}) {
+  ouvert, onOuvertChange, onCree,
+}: { ouvert: boolean; onOuvertChange: (v: boolean) => void; onCree: () => void }) {
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
@@ -323,24 +202,15 @@ function DialogNouvelUtilisateur({
     setErreur("");
     setChargement(true);
     try {
-      await apiFetch("/users/admin/utilisateurs", {
-        method: "POST",
-        body: JSON.stringify({ nom, prenom, email, role }),
-      });
-
-      toast.success("Utilisateur créé", {
-        description: `Le compte de ${prenom} ${nom} a été créé avec succès.`,
-      });
-
+      await apiFetch("/users/admin/utilisateurs", { method: "POST", body: JSON.stringify({ nom, prenom, email, role }) });
+      toast.success("Utilisateur créé", { description: `Le compte de ${prenom} ${nom} a été créé avec succès.` });
       setNom(""); setPrenom(""); setEmail(""); setRole("TESTEUR");
       onOuvertChange(false);
       onCree();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur lors de la création";
       setErreur(message);
-      toast.error("Erreur de création", {
-        description: message,
-      });
+      toast.error("Erreur de création", { description: message });
     } finally {
       setChargement(false);
     }
@@ -352,9 +222,7 @@ function DialogNouvelUtilisateur({
         <Plus className="mr-2 h-4 w-4" /> Nouvel utilisateur
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Créer un utilisateur</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>Créer un utilisateur</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

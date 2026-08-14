@@ -55,17 +55,17 @@ export class UsersController {
     }
 
     @Get('admin/utilisateurs')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMINISTRATEUR')
-listerUtilisateurs(
-  @Query('page') page = '1',
-  @Query('limit') limit = '',
-  @Query('recherche') recherche?: string,
-  @Query('statut') statut?: string,
-) {
-  return this.userService.listerUtilisateursAdmin(Number(page), Number(limit), recherche, statut);
-}
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('ADMINISTRATEUR')
+    listerUtilisateurs(
+        @Query('page') page = '1',
+        @Query('limit') limit = '',
+        @Query('recherche') recherche?: string,
+        @Query('statut') statut?: string,
+    ) {
+        return this.userService.listerUtilisateursAdmin(Number(page), Number(limit), recherche, statut);
+    }
 
     @Patch('admin/utilisateurs/:id/activer')
     @ApiBearerAuth()
@@ -91,5 +91,13 @@ listerUtilisateurs(
         @Query('q') motCle: string,
     ) {
         return this.userService.rechercherUtilisateur(projetId, motCle);
+    }
+
+    @Get('admin/utilisateurs/statistiques')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('ADMINISTRATEUR')
+    statistiques() {
+        return this.userService.obtenirStatistiques();
     }
 }
