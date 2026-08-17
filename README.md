@@ -1,1 +1,1 @@
-Ceci est un test de modification automatique par Fixbug.
+Test depuis le controller NestJS
