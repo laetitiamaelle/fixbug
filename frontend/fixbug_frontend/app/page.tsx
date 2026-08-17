@@ -178,7 +178,7 @@ export default function FixbugLanding() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+                className="text-sm font-medium text-brand-ink hover:text-slate-800 transition-colors hover:text-white"
               >
                 {l.label}
               </a>
@@ -188,15 +188,15 @@ export default function FixbugLanding() {
           <div className="hidden items-center gap-3 lg:flex">
             <a
               href="/connexion"
-              className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
+              className="text-sm font-semibold text-brand-ink transition-colors hover:text-slate-700"
             >
               Connexion
             </a>
             <a
               href="/inscription"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#0B0E17] transition-all hover:bg-slate-100"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-slate-700"
             >
-              Commencer gratuitement
+              s'incrire
             </a>
           </div>
 
@@ -278,42 +278,25 @@ export default function FixbugLanding() {
               </a>
               <a
                 href="#comment-ca-marche"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-6 py-3 font-semibold text-slate-200 transition-colors hover:border-white/30 hover:text-white"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-6 py-3 font-semibold text-brand-ink transition-colors hover:border-white/30 hover:text-slate-500"
               >
                 Voir comment ça marche
               </a>
             </div>
 
-            <div className="reveal d4 mt-10 flex items-center gap-2 text-sm text-slate-500">
-              
-              <span>Intégration GitHub native — branches, commits, Pull Requests.</span>
-            </div>
           </div>
 
           {/* Visuel */}
           <div className="reveal d2 relative">
-            <div className="relative h-96 w-full overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
+            <div className="relative animate-float-delayed  h-96 w-full overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000&auto=format&fit=crop"
+                src="https://fr.pinterest.com/pin/4599230842078909824/"
                 alt="Développeur analysant du code sur plusieurs écrans"
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E17]/60 via-transparent to-transparent" />
             </div>
-
-            {/* Carte flottante : PR */}
-            <div className="animate-float absolute -right-6 -top-6 hidden w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-xl sm:block">
-              <div className="flex items-center gap-2 text-slate-500">
-                <GitPullRequest className="h-4 w-4" />
-                <span className="font-mono text-xs">#128</span>
-              </div>
-              <p className="mt-1 text-sm font-semibold text-slate-800">
-                fix: null pointer dans checkout()
-              </p>
-              <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                Générée par l'agent IA
-              </span>
-            </div>
+            
 
             {/* Carte flottante : bug corrigé */}
             <div className="animate-float-delayed absolute -bottom-6 -left-6 hidden items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-xl sm:flex">
@@ -524,11 +507,11 @@ export default function FixbugLanding() {
               <p className="font-mono text-xs uppercase tracking-wider text-slate-400">
                 Produit
               </p>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-500">
-                <li><a href="#fonctionnalites" className="hover:text-white">Fonctionnalités</a></li>
-                <li><a href="#comment-ca-marche" className="hover:text-white">Comment ça marche</a></li>
-                <li><a href="/inscription" className="hover:text-white">Inscription</a></li>
-                <li><a href="/connexion" className="hover:text-white">Connexion</a></li>
+              <ul className="mt-4 space-y-2.5 text-sm text-brand-ink">
+                <li><a href="#fonctionnalites" className="hover:text-slate-00">Fonctionnalités</a></li>
+                <li><a href="#comment-ca-marche" className="hover:text-slate-700">Comment ça marche</a></li>
+                <li><a href="/inscription" className="hover:text-slate-700">Inscription</a></li>
+                <li><a href="/connexion" className="hover:text-slate-700">Connexion</a></li>
               </ul>
             </div>
 

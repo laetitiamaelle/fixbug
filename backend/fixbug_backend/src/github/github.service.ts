@@ -8,12 +8,15 @@ export class GithubService {
     //  extrait "owner" et "repo" depuis un lien complet
     // Exemple : "https://github.com/laetitiamaelle/fixbug" → { owner: "laetitiamaelle", repo: "fixbug" }
     private extraireOwnerRepo(lienGithub: string): { owner: string; repo: string } {
-        const correspondance = lienGithub.match(/github\.com\/([^/]+)\/([^/]+?)(\.git)?\/?$/);
-        if (!correspondance) {
-            throw new BadRequestException('Lien GitHub invalide');
-        }
-        return { owner: correspondance[1], repo: correspondance[2] };
-    }
+  if (!lienGithub) {
+    throw new BadRequestException('Le lien GitHub est requis');
+  }
+  const correspondance = lienGithub.match(/github\.com\/([^/]+)\/([^/]+?)(\.git)?\/?$/);
+  if (!correspondance) {
+    throw new BadRequestException('Lien GitHub invalide');
+  }
+  return { owner: correspondance[1], repo: correspondance[2] };
+}
 
     async listerFichiers(lienGithub: string, chemin = '') {
         const { owner, repo } = this.extraireOwnerRepo(lienGithub);
@@ -40,7 +43,7 @@ export class GithubService {
         await this.octokit.rest.git.createRef({
             owner, repo, ref: `refs/heads/${nomNouvelleBranche}`, sha: shaDepart,
         });
-        return { branche: nomNouvelleBranche };
+        return {message:"bracnche creer avec succes" ,branche: nomNouvelleBranche };
     }
 
     async modifierFichier(
@@ -58,7 +61,7 @@ export class GithubService {
             sha: shaActuel,
             branch: nomBranche,
         });
-        return { sha: reponse.data.content?.sha, urlCommit: reponse.data.commit?.html_url };
+        return { sha: reponse.data.content?.sha, urlCommit: reponse.data.commit?.html_url,message:"le fichier a ete modfier" };
     }
 
     async ouvrirPullRequest(lienGithub: string, nomBranche: string, titre: string, description: string) {

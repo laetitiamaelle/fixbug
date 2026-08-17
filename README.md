@@ -1,1 +1,1 @@
-"# fixbug" 
+Ceci est un test de modification automatique par Fixbug.
