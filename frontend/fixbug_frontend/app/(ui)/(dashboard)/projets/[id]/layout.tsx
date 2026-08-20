@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import { useState } from "react";
 
 export default function ProjetLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,17 +20,25 @@ export default function ProjetLayout({ children }: { children: React.ReactNode }
   }, [params.id]);
 
   const estTesteur = utilisateur?.role === "TESTEUR";
+  const estDeveloppeur = utilisateur?.role === "DEVELOPPEUR"; // NOUVEAU
 
-  // NOUVEAU : un Testeur ne peut voir QUE la page principale (Aperçu) d'un projet —
-  // s'il atterrit sur /bugs, /collaborateurs ou /parametres, on le renvoie à l'Aperçu.
+  // Le testeur reste bloqué sur "Aperçu" (son chat de déclaration)
   useEffect(() => {
     if (estTesteur && pathname !== base) {
       router.replace(base);
     }
   }, [estTesteur, pathname, base, router]);
 
+  // NOUVEAU : le développeur n'a pas d'"Aperçu" — direction "Bugs" par défaut
+  useEffect(() => {
+    if (estDeveloppeur && pathname === base) {
+      router.replace(`${base}/bugs`);
+    }
+  }, [estDeveloppeur, pathname, base, router]);
+
   const onglets = [
-    { href: base, label: "Aperçu" },
+    // NOUVEAU : "Aperçu" visible pour Testeur ET Chef de projet, plus pour Développeur
+    ...(!estDeveloppeur ? [{ href: base, label: "Aperçu" }] : []),
     { href: `${base}/bugs`, label: "Bugs" },
     ...(projet?.estProprietaire ? [
       { href: `${base}/collaborateurs`, label: "Collaborateurs" },

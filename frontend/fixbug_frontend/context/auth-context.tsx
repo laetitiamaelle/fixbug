@@ -9,7 +9,7 @@ type Utilisateur = {
   nom: string;
   prenom: string;
   email: string;
-  role: "TESTEUR" | "CHEF_PROJET" | "ADMINISTRATEUR";
+  role: "TESTEUR" |"DEVELOPPEUR" |"CHEF_PROJET" | "ADMINISTRATEUR";
 };
 
 type AuthContextType = {

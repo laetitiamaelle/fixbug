@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException ,Logger} from '@nestjs/common';
 import { Octokit } from 'octokit';
 
 @Injectable()
 export class GithubService {
+     private readonly logger = new Logger(GithubService.name);
     private octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
     //  extrait "owner" et "repo" depuis un lien complet
@@ -69,6 +70,45 @@ export class GithubService {
         const reponse = await this.octokit.rest.pulls.create({
             owner, repo, title: titre, body: description, head: nomBranche, base: 'main',
         });
+          this.logger.log(`Pull Request créée : ${reponse.data.html_url}`);
         return { url: reponse.data.html_url, numero: reponse.data.number };
     }
+
+    //recuperer les fichiers sur github a partir du dernier commit pour afficher l'arborescence dans le webcontanier
+
+      async obtenirArborescenceComplete(lienGithub: string) {
+    const { owner, repo } = this.extraireOwnerRepo(lienGithub);
+    this.logger.log(`Récupération de l'arborescence complète pour ${owner}/${repo}`);
+
+    // 1. SHA du dernier commit sur main
+    const refMain = await this.octokit.rest.git.getRef({ owner, repo, ref: 'heads/main' });
+    const shaCommit = refMain.data.object.sha;
+
+    // 2. Tout l'arbre du dépôt, en une seule requête (recursive: '1')
+    const arbre = await this.octokit.rest.git.getTree({
+      owner, repo, tree_sha: shaCommit, recursive: '1' as any,
+    });
+
+    // Exclut les dossiers volumineux/inutiles pour l'agent
+    const DOSSIERS_EXCLUS = ['node_modules', '.git', '.next', 'dist', 'build'];
+    const fichiersUtiles = arbre.data.tree.filter(
+      (item) =>
+        item.type === 'blob' &&
+        !DOSSIERS_EXCLUS.some((dossier) => item.path?.includes(`${dossier}/`)),
+    );
+
+    this.logger.log(`${fichiersUtiles.length} fichiers à récupérer`);
+
+    // 3. Contenu de chaque fichier, en parallèle
+    const fichiersAvecContenu = await Promise.all(
+      fichiersUtiles.map(async (item) => {
+        const blob = await this.octokit.rest.git.getBlob({ owner, repo, file_sha: item.sha! });
+        const contenu = Buffer.from(blob.data.content, 'base64').toString('utf-8');
+        return { chemin: item.path!, contenu };
+      }),
+    );
+
+    this.logger.log(`Arborescence récupérée avec succès (${fichiersAvecContenu.length} fichiers)`);
+    return fichiersAvecContenu;
+  }
 }

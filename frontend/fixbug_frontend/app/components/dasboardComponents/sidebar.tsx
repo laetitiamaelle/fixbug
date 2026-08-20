@@ -25,7 +25,12 @@ const navTesteur = [
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profil", label: "Profil", icon: UserPen },
 ];
-
+const navDeveloppeur = [
+  { href: "/projets", label: "Projets", icon: FolderKanban },
+  { href: "/invitations", label: "Invitations", icon: Mail },
+   { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/profil", label: "Profil", icon: UserPen },
+];
 const navAdmin = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/notifications", label: "Notifications", icon: Bell },
@@ -42,6 +47,8 @@ export function Sidebar() {
   let navPrincipale = navChefProjet;
 if (utilisateur?.role === "ADMINISTRATEUR") navPrincipale = navAdmin;
 if (utilisateur?.role === "TESTEUR") navPrincipale = navTesteur;
+if (utilisateur?.role === "DEVELOPPEUR") navPrincipale = navDeveloppeur;
+
 
   return (
     <>

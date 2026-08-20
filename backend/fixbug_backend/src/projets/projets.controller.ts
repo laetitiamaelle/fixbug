@@ -47,6 +47,13 @@ export class ProjetsController {
     obtenirStatistiques(@CurrentUser() utilisateur: { id: number }) {
         return this.projetService.obtenirStatistiques(utilisateur.id);
     }
+    @Get(':id/apercu')
+    @UseGuards(RolesGuard)
+    @Roles('CHEF_PROJET') // seul le chef de projet utilise cette route pour l'instant
+    obtenirApercu(@Param('id', ParseIntPipe) id: number) {
+        return this.projetService.obtenirApercu(id);
+    }
+    
     @Get(':id')
     obtenirProjet(
         @Param('id', ParseIntPipe) id: number,
@@ -59,5 +66,7 @@ export class ProjetsController {
     async quitterProjet(@Param('id', ParseIntPipe) projetId: number, @CurrentUser() utilisateur: { id: number }) {
         return this.projetService.quitterProjet(projetId, utilisateur.id)
     }
+
+    
 
 }

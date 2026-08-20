@@ -34,7 +34,6 @@ export default function UtilisateursAdminPage() {
   const [stats, setStats] = useState<StatistiquesUtilisateurs | null>(null);
   const [statsChargement, setStatsChargement] = useState(true);
 
-  // débounce recherche : on attend 400ms après la dernière frappe avant d'appeler l'API
   useEffect(() => {
     const t = setTimeout(() => {
       setPage(1);
@@ -193,7 +192,7 @@ function DialogNouvelUtilisateur({
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"TESTEUR" | "CHEF_PROJET" | "ADMINISTRATEUR">("TESTEUR");
+  const [role, setRole] = useState<"TESTEUR" | "CHEF_PROJET" | "DEVELOPPEUR">("TESTEUR");
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
 
@@ -245,6 +244,7 @@ function DialogNouvelUtilisateur({
               <SelectContent>
                 <SelectItem value="TESTEUR">Testeur</SelectItem>
                 <SelectItem value="CHEF_PROJET">Chef de projet</SelectItem>
+                <SelectItem value="DEVELOPPEUR">Developeur</SelectItem>
               </SelectContent>
             </Select>
           </div>

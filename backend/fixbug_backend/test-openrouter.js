@@ -9,7 +9,30 @@ const MODELES = [
   'openai/gpt-oss-20b:free',
 ];
 
-async function testerAvecImage() {
+
+
+// Un outil FACTICE pour l'instant — pas encore branché sur GithubService
+const outils = [
+  {
+    type: 'function',
+    function: {
+      name: 'lire_fichier',
+      description: 'Lit le contenu d\'un fichier du dépôt de code source',
+      parameters: {
+        type: 'object',
+        properties: {
+          chemin: {
+            type: 'string',
+            description: 'Le chemin du fichier à lire, ex: src/components/LoginButton.tsx',
+          },
+        },
+        required: ['chemin'],
+      },
+    },
+  },
+];
+
+async function testerFunctionCalling() {
   const reponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -21,20 +44,10 @@ async function testerAvecImage() {
       messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: "Voici la description d'un bug : \"Le bouton de connexion ,je voudrais qu'il soit bleu\". Voici une capture d'écran du problème. Que vois-tu sur cette image qui pourrait expliquer ce bug ?",
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: 'https://res.cloudinary.com/nciauxse/image/upload/v1786961848/fixbug/bugs/oi24dfarnczc5xjuhmna.png', // ex: https://res.cloudinary.com/.../fixbug/bugs/xxxxx.jpg
-              },
-            },
-          ],
+          content: "Le bouton de connexion est censé être bleu mais il est noir. Le fichier concerné s'appelle probablement LoginButton.tsx. Peux-tu m'aider à comprendre le problème ?",
         },
       ],
+      tools: outils,
     }),
   });
 
@@ -42,4 +55,4 @@ async function testerAvecImage() {
   console.log(JSON.stringify(data, null, 2));
 }
 
-testerAvecImage();
+testerFunctionCalling();

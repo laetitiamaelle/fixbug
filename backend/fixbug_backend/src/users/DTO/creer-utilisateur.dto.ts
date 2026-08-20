@@ -13,6 +13,6 @@ export class CreerUtilisateurDto {
   @IsEmail()
   email!: string;
 
-  @IsIn(['TESTEUR', 'CHEF_PROJET', 'ADMINISTRATEUR'], { message: 'Role invalide' })
-  role!: 'TESTEUR' | 'CHEF_PROJET' | 'ADMINISTRATEUR';
+  @IsIn(['TESTEUR', 'CHEF_PROJET', 'ADMINISTRATEUR','DEVELOPPEUR'], { message: 'Role invalide' })
+  role!: 'TESTEUR' | 'CHEF_PROJET' | 'ADMINISTRATEUR'|'DEVELOPPEUR';
 }

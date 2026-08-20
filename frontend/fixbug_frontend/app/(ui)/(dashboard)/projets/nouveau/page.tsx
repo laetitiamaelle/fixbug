@@ -17,7 +17,7 @@ import { toast } from "sonner";
 const TECHNOLOGIES_DISPONIBLES = [
     "JavaScript", "TypeScript", "Python", "Java", "C#", "PHP", "Ruby", "Go", "Rust",
     "React", "Next.js", "Angular", "Vue.js", "NestJS", "Django", "Laravel", "Spring Boot",
-    "PostgreSQL", "MySQL", "MongoDB", "Docker", "Redis",
+   
 ];
 
 export default function NouveauProjetPage() {
@@ -44,7 +44,7 @@ export default function NouveauProjetPage() {
                 method: "POST",
                 body: JSON.stringify({ nom, description, lienGithub, technologies }),
             });
-            // NOUVEAU : message de succès avant la redirection
+            
             toast.success("Projet créé avec succès");
             router.push(`/projets/${projet.id}`);
         } catch (err) {

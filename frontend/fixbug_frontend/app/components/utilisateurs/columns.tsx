@@ -1,33 +1,51 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ShieldUser, User, MoreVertical, Ban, CheckCircle2, Trash2 } from "lucide-react";
+import { ShieldUser, User,Code2, MoreVertical, Ban, CheckCircle2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import React from "react";
 
 export type Utilisateur = {
   id: number;
   nom: string;
   prenom: string;
   email: string;
-  role: "TESTEUR" | "CHEF_PROJET" | "ADMINISTRATEUR";
+  role: "TESTEUR" | "CHEF_PROJET" | "DEVELOPPEUR";
   actif: boolean;
 };
 
 const labelsRole: Record<string, string> = {
   TESTEUR: "Testeur",
   CHEF_PROJET: "Chef de projet",
-  ADMINISTRATEUR: "Administrateur",
+  DEVELOPPEUR: "Developpeur",
 };
 
 type Actions = {
   onActiverDesactiver: (u: Utilisateur) => void;
   onSupprimer: (u: Utilisateur) => void;
 };
+// mon objet de configuartion des styles et des icones pour le badge role
+const roleConfig:Record<string,{className:string; icon:React.ReactNode}>={
+  CHEF_PROJET:{
+    className:" bg-sky-50 text-sky-900 border-sky-200",
+    icon:<ShieldUser className="h-3 w-3.5 text-sky-600"/>
+  },
+   DEVELOPPEUR:{
+    className:" bg-purple-50 text-purple-900 border-purple-200",
+    icon:<Code2 className="h-3 w-3.5 text-purple-600"/>
+  },
+   TESTEUR:{
+    className:" bg-green-50 text-green-900 border-green-200",
+    icon:<User className="h-3 w-3.5 text-green-600"/>
+  }
+
+}
 
 export function creerColonnes({ onActiverDesactiver, onSupprimer }: Actions): ColumnDef<Utilisateur>[] {
+  
   return [
     {
       id: "nomComplet",
@@ -46,19 +64,18 @@ export function creerColonnes({ onActiverDesactiver, onSupprimer }: Actions): Co
     {
       accessorKey: "role",
       header: "Rôle",
-      cell: ({ row }) => (
+      cell: ({ row }) =>{ 
+         const role=row.original.role;
+         const config=roleConfig[role]||roleConfig.TESTEUR
+        return (
         <Badge
           variant="secondary"
-          className={
-            row.original.role === "CHEF_PROJET"
-              ? "font-normal bg-sky-50 text-sky-900 gap-1"
-              : "font-normal bg-green-50 text-green-900 gap-1"
-          }
+          className={`gap-1 ${config.className}`}
         >
           {row.original.role === "CHEF_PROJET" ? <ShieldUser className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
           {labelsRole[row.original.role]}
         </Badge>
-      ),
+      );}
     },
     {
       accessorKey: "actif",

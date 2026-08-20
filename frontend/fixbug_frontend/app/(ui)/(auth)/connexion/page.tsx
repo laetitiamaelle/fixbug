@@ -16,7 +16,7 @@ export default function ConnexionPage() {
     const [email, setEmail] = useState("");
     const [motdepasse, setMotdepasse] = useState("");
     const [loading, setLoading] = useState(false);
-     const { rafraichir } = useAuth();
+    const { rafraichir } = useAuth();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -36,7 +36,7 @@ export default function ConnexionPage() {
                     motdepasse: motdepasse.trim(),
                 }),
             });
-        
+
             const textData = await response.text();
             let data;
             try {
@@ -57,7 +57,7 @@ export default function ConnexionPage() {
                 return;
             }
 
-            
+
             if (data.access_token || data.token) {
                 localStorage.setItem("token", data.access_token || data.token);
                 await rafraichir()
@@ -67,14 +67,13 @@ export default function ConnexionPage() {
             const userRole = data.utilisateur?.role || data.user?.role || data.role;
             if (userRole === "CHEF_PROJET") {
                 router.push("/chef_projet");
-               
-            } else if(userRole === "ADMINISTRATEUR"){
+            } else if (userRole === "ADMINISTRATEUR") {
                 router.push("/admin");
-               
-             } else{
-                router.push("/testeur");
-               
-             }
+            } else if (userRole === "DEVELOPPEUR") {
+                router.push("/projets"); // ou /bugs, selon ce que tu préfères comme accueil développeur
+            } else {
+                router.push("/projets"); // Testeur
+            }
         } catch (error) {
             console.error("Erreur de connexion :", error);
             setErrorMessage("Impossible de se connecter,.");
@@ -143,7 +142,7 @@ export default function ConnexionPage() {
                                     className="pl-9 pr-9 hover:border-[#00D08C]"
                                     value={motdepasse}
                                     onChange={(e) => setMotdepasse(e.target.value)}
-                                   
+
                                 />
                                 <button
                                     type="button"
@@ -165,7 +164,7 @@ export default function ConnexionPage() {
                         </div>
 
                         <Button
-                            type="submit" 
+                            type="submit"
                             disabled={loading}
                             className="w-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center gap-2"
                         >

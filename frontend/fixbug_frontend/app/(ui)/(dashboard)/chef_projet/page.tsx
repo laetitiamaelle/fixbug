@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    if (utilisateur && utilisateur.role === "TESTEUR") {
+    if (utilisateur && utilisateur.role !== "CHEF_PROJET" ) {
       router.replace("/projets");
     }
   }, [utilisateur, router]);

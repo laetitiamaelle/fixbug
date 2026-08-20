@@ -1,9 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException ,Logger} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
+   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
@@ -35,8 +36,10 @@ export class MailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email de bienvenue envoyé à ${email}`);
     } catch (error) {
       console.error('Erreur lors de l\'envoi de l\'email via Gmail:', error);
+      this.logger.error(`Échec envoi email à ${email}`, error);
       throw new InternalServerErrorException('Impossible d\'envoyer l\'email d\'activation.');
     }
   }

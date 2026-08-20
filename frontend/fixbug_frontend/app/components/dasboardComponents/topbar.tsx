@@ -3,17 +3,38 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/context/notifications-context";
-import { Search, UserPen, Bell, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Search, UserPen, Bell, ChevronDown, LogOut, Menu,ShieldCheck,User,Code2,ShieldUser } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
 import { useSidebar } from "@/context/sidebar-context";
 import { apiFetch } from "@/lib/api";
+import {Badge} from "@/components/ui/badge"
 
 const labelsRole: Record<string, string> = {
-  TESTEUR: "Testeur", CHEF_PROJET: "Chef de projet", ADMINISTRATEUR: "Administrateur",
+  TESTEUR: "Testeur", CHEF_PROJET: "Chef de projet", ADMINISTRATEUR: "Administrateur",DEVELOPPEUR:"Developpeur",
 };
+
+const roleConfig:Record<string,{className:string; icon:React.ReactNode}>={
+   CHEF_PROJET:{
+     className:" bg-sky-50 text-sky-900 border-sky-200",
+     icon:<ShieldUser className="h-3 w-3.5 text-sky-600"/>
+   },
+    DEVELOPPEUR:{
+     className:" bg-purple-50 text-purple-900 border-purple-200",
+     icon:<Code2 className="h-3 w-3.5 text-purple-600"/>
+   },
+    TESTEUR:{
+     className:" bg-green-50 text-green-900 border-green-200",
+     icon:<User className="h-3 w-3.5 text-green-600"/>
+   },
+   ADMINISTRATEUR:{
+    className:" bg-red-50 text-red-900 border-red-200",
+     icon:<ShieldCheck className="h-3 w-3.5 text-red-600"/>
+   }
+ 
+ }
 
 export function Topbar() {
   const { utilisateur, chargement, deconnexion } = useAuth();
@@ -21,7 +42,8 @@ export function Topbar() {
   const router = useRouter();
   const [recherche, setRecherche] = useState("");
   const { nonLues } = useNotifications(); 
-
+ 
+ const currentRoleConfig = utilisateur?.role ? (roleConfig[utilisateur.role] || roleConfig.TESTEUR) : roleConfig.TESTEUR;
  
 
   return (
@@ -53,13 +75,13 @@ export function Topbar() {
 
         {chargement || !utilisateur ? null : (
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2 outline-none transition-colors hover:bg-slate-100">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12151F] text-sm font-semibold text-white">
+            <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2 outline-black transition-colors hover:bg-slate-100">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center   rounded-full bg-[#12151F] text-sm font-semibold text-white">
                 {`${utilisateur.prenom[0]}${utilisateur.nom[0]}`.toUpperCase()}
               </div>
               <div className="hidden text-left sm:block">
                 <p className="text-sm font-medium leading-tight text-[#12151F]">{utilisateur.prenom} {utilisateur.nom}</p>
-                <p className="text-xs leading-tight text-slate-500">{labelsRole[utilisateur.role]}</p>
+                <Badge className={`text-xs  text-blue-700 bg-blue-50${currentRoleConfig.className}`}>{currentRoleConfig.icon} {labelsRole[utilisateur.role]}</Badge>
               </div>
               <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
             </DropdownMenuTrigger>

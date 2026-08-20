@@ -1,9 +1,10 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException,Logger } from '@nestjs/common';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CollaborationsService {
+     private readonly logger = new Logger(CollaborationsService.name);
     constructor(private prisma: PrismaService, private notifications: NotificationsService) { }
 
     // verifier proprietaire projet
@@ -58,7 +59,8 @@ export class CollaborationsService {
                         id: true,
                         nom: true,
                         prenom: true,
-                        email: true
+                        email: true,
+                        role:true
                     }
                 }
             }

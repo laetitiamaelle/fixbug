@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException,NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, UnauthorizedException,NotFoundException,Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDto } from './DTO/register.dto';
 import * as bcrypt from 'bcrypt';
@@ -12,6 +12,7 @@ import { genererMotDePasseAleatoire } from './utils/genere-mot-de-passe';
 
 @Injectable()
 export class UsersService {
+   private readonly logger = new Logger(UsersService.name);
     constructor(private prisma: PrismaService, private jwtService: JwtService, private mailService:MailService) { }
 
     // ........................insciption.........................
@@ -88,7 +89,7 @@ export class UsersService {
         });
     }
 
-    // ------------------CREER UN UTILISATEUR / ADMINISTRATEUR ---------------
+    // ------------------CREER UN UTILISATEUR/ADMINISTRATEUR ---------------
 
     
 async creerUtilisateur(data: CreerUtilisateurDto) {
@@ -126,6 +127,7 @@ async creerUtilisateur(data: CreerUtilisateurDto) {
   await this.mailService.envoyerParametre(data.email, data.prenom, motDePasseGenere,data.role);
   }catch(erreurEmail){
     console.error('Échec envoi email de bienvenue :', erreurEmail);
+    this.logger.error(`Échec envoi email de bienvenue pour ${data.email}`, erreurEmail);
   }
   return utilisateur;
 }
@@ -150,7 +152,7 @@ async listerUtilisateursAdmin(
   statut?: string,
 ) {
   const conditions: any[] = [
-    { OR: [{ role: 'CHEF_PROJET' }, { role: 'TESTEUR' }] },
+    { OR: [{ role: 'CHEF_PROJET' }, { role: 'TESTEUR' },{role:'DEVELOPPEUR'}] },
   ];
 
   if (recherche) {
@@ -240,7 +242,7 @@ async rechercherUtilisateur(projetId: number, motCle: string) {
   
   return this.prisma.utilisateur.findMany({
     where: {
-      role: 'TESTEUR',
+      role: {in:['TESTEUR','DEVELOPPEUR']},
       actif: true,
       id: { notIn: idsAExclure },
       OR: [
@@ -249,7 +251,7 @@ async rechercherUtilisateur(projetId: number, motCle: string) {
         { email: { contains: motCle, mode: 'insensitive' } },
       ],
     },
-    select: { id: true, nom: true, prenom: true, email: true },
+    select: { id: true, nom: true, prenom: true, email: true,role:true },
   });
 }
 

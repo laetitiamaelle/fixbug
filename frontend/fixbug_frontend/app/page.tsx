@@ -178,7 +178,7 @@ export default function FixbugLanding() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm font-medium text-brand-ink hover:text-slate-800 transition-colors hover:text-white"
+                className="text-sm font-medium text-brand-ink hover:text-slate-800  hover:text-green"
               >
                 {l.label}
               </a>
@@ -243,16 +243,14 @@ export default function FixbugLanding() {
       {/* ------------------------------------------------------------ */}
       <section className="relative overflow-hidden bg-white pb-24 pt-40">
         <div className="pointer-events-none absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-emerald-600/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-slate-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full  blur-3xl" />
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2">
           {/* Texte */}
           <div>
             <div className="reveal inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-mono text-xs uppercase tracking-wider text-slate-300">
-                IA + GitHub, connectés
-              </span>
+              <span className="" />
+              
             </div>
 
             <h1 className="reveal d1 mt-6 font-serif text-4xl font-bold leading-tight tracking-tight text-black sm:text-5xl">
@@ -264,7 +262,7 @@ export default function FixbugLanding() {
             <p className="reveal d2 mt-6 max-w-lg text-lg leading-relaxed text-slate-400">
               Fixbug connecte vos testeurs, vos chefs de projet et un agent IA
               à votre dépôt GitHub. Un bug est déclaré, l'IA l'analyse et
-              propose une correction — vous gardez toujours la main sur la
+              propose une correction ,vous gardez toujours la main sur la
               validation.
             </p>
 
@@ -494,7 +492,7 @@ export default function FixbugLanding() {
       <footer className="bg-[#e7eaf2] py-14">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
-            <div className="col-span-2">
+            <div className="col-span-2 mr-3.5">
               <Logo />
               <p className="mt-4 max-w-xs text-sm text-slate-500">
                 La plateforme qui relie vos testeurs, vos chefs de projet et
@@ -503,8 +501,8 @@ export default function FixbugLanding() {
               
             </div>
 
-            <div>
-              <p className="font-mono text-xs uppercase tracking-wider text-slate-400">
+            <div className="ml-20">
+              <p className="font-mono text-xs uppercase tracking-wider text-slate-900">
                 Produit
               </p>
               <ul className="mt-4 space-y-2.5 text-sm text-brand-ink">
@@ -515,19 +513,11 @@ export default function FixbugLanding() {
               </ul>
             </div>
 
-            <div>
-              <p className="font-mono text-xs uppercase tracking-wider text-slate-400">
-                Légal
-              </p>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-500">
-                <li><a href="#" className="hover:text-white">Confidentialité</a></li>
-                <li><a href="#" className="hover:text-white">Conditions d'utilisation</a></li>
-              </ul>
-            </div>
+            
           </div>
 
           <div className="mt-12 border-t border-white/10 pt-6 text-center text-xs text-slate-600">
-            © {new Date().getFullYear()} Fixbug. Tous droits réservés.
+             @{new Date().getFullYear()} Fixbug. 
           </div>
         </div>
       </footer>
