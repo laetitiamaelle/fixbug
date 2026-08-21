@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException,Logger } from '@nestj
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreerProjetDto } from './DTO/creer-projet.dto';
 import { NotFoundError } from 'rxjs';
+import { StatutBug } from '@prisma/client';
 import { ModifierProjetDto } from './DTO/modifier-projet.dto';
 
 @Injectable()
@@ -180,29 +181,32 @@ async obtenirStatistiques(chefProjetId: number) {
 
 // stats chef projet pour un projet 
 
-// projets.service.ts — nouvelle méthode
 async obtenirApercu(projetId: number) {
   const projet = await this.prisma.projet.findUnique({ where: { id: projetId } });
   if (!projet) throw new NotFoundException('Projet introuvable');
 
-  // Membres = collaborations acceptées, avec le rôle de chaque utilisateur
+  // 1. Récupération des collaborateurs directement depuis ProjetCollaborateur
   const collaborations = await this.prisma.projetCollaborateur.findMany({
-    where: { projetId, statutInvitation: 'ACCEPTEE' },
-    include: { utilisateur: { select: { role: true } } },
+    where: { projetId },
+    include: { 
+      utilisateur: { 
+        select: { role: true } 
+      } 
+    },
   });
 
   const nombreTesteurs = collaborations.filter((c) => c.utilisateur.role === 'TESTEUR').length;
   const nombreDeveloppeurs = collaborations.filter((c) => c.utilisateur.role === 'DEVELOPPEUR').length;
-  const nombreMembres = collaborations.length + 1; // +1 pour le chef de projet lui-même
+  const nombreMembres = collaborations.length + 1; // +1 pour le chef de projet
 
-  // Bugs regroupés par statut, en une seule requête agrégée (pas 4 requêtes séparées)
+  // 2. Agrégation des bugs par statut
   const bugsParStatut = await this.prisma.bug.groupBy({
     by: ['statut'],
     where: { projetId },
     _count: { _all: true },
   });
 
-  const compteur = (statut: string) =>
+  const compteur = (statut: StatutBug) =>
     bugsParStatut.find((b) => b.statut === statut)?._count._all ?? 0;
 
   const enCoursDeTraitement = compteur('EN_COURS_DE_TRAITEMENT');

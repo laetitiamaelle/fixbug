@@ -110,7 +110,9 @@ model Bug {
   testeur     Utilisateur @relation(fields: [testeurId], references: [id])
   developpeurId  Int?
   developpeur    Utilisateur? @relation("BugsPrisEnCharge", fields: [developpeurId], references: [id])
-  proposition    String?      // le code final proposé/validé par le développeur, avant envoi sur GitHub
+  proposition    String?
+  numeroPR       Int?     
+  urlPR          String?  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

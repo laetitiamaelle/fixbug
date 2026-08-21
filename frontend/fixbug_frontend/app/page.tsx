@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
   Check,
@@ -12,19 +13,19 @@ import {
   Camera,
   Bot,
   GitPullRequest,
-  Bell,
   BarChart3,
   ShieldCheck,
-  Zap,
   Users,
+  UserCheck,
+  ClipboardList,
   Menu,
   X,
-  
 } from "lucide-react";
 import { Logo } from "./components/logo";
+import { IconeGithub } from "./components/icone-github";
 
 /* ------------------------------------------------------------------ */
-/* Types                                                                */
+/* Types                                                              */
 /* ------------------------------------------------------------------ */
 interface NavLink {
   label: string;
@@ -43,8 +44,14 @@ interface Step {
   desc: string;
 }
 
+interface Role {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}
+
 /* ------------------------------------------------------------------ */
-/* Hook: révèle les sections au scroll                                 */
+/* Hook: révèle les sections au scroll                                */
 /* ------------------------------------------------------------------ */
 function useReveal() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -78,39 +85,57 @@ export default function FixbugLanding() {
   const navLinks: NavLink[] = [
     { label: "Fonctionnalités", href: "#fonctionnalites" },
     { label: "Comment ça marche", href: "#comment-ca-marche" },
-    { label: "Pourquoi Fixbug", href: "#pourquoi" },
+    { label: "Les rôles", href: "#roles" },
+  ];
+
+  const roles: Role[] = [
+    {
+      icon: Camera,
+      title: "Testeur",
+      desc: "Signale un bug avec une description et des captures d'écran. Aucun accès au code, aucun compte GitHub requis.",
+    },
+    {
+      icon: Bot,
+      title: "Développeur",
+      desc: "Prend en charge le bug, sollicite l'agent IA, examine sa proposition puis la valide avant tout envoi sur le dépôt.",
+    },
+    {
+      icon: ClipboardList,
+      title: "Chef de projet",
+      desc: "Pilote le projet, gère les collaborateurs et suit la livrabilité globale — sans intervenir techniquement sur le code.",
+    },
   ];
 
   const features: Feature[] = [
     {
       icon: FolderGit2,
       title: "Projets connectés à GitHub",
-      desc: "Associez chaque projet à son dépôt, sa branche principale et les technologies utilisées.",
+      desc: "Connexion OAuth GitHub pour les chefs de projet et développeurs, dépôt et branche principale associés à chaque projet.",
     },
     {
       icon: Camera,
       title: "Signalement en un clic",
-      desc: "Les testeurs décrivent l'anomalie et joignent une ou plusieurs captures d'écran.",
+      desc: "Les testeurs décrivent l'anomalie et joignent une ou plusieurs captures d'écran, sans jamais toucher au code.",
     },
     {
       icon: Bot,
-      title: "Agent IA intégré",
-      desc: "L'IA analyse le rapport, explore le dépôt et identifie les fichiers concernés.",
+      title: "Agent IA sur demande",
+      desc: "L'IA n'agit jamais seule : elle n'intervient qu'à la demande explicite d'un développeur, sur une tâche précise.",
+    },
+    {
+      icon: UserCheck,
+      title: "Validation humaine obligatoire",
+      desc: "Le développeur examine la proposition de l'IA (fichiers, diff) et la valide ou la rejette avant tout envoi sur GitHub.",
     },
     {
       icon: GitPullRequest,
-      title: "Pull Requests automatiques",
-      desc: "Branche créée, correctif appliqué, commit poussé, PR ouverte — sans intervention manuelle.",
-    },
-    {
-      icon: Bell,
-      title: "Notifications en temps réel",
-      desc: "Chefs de projet et testeurs sont informés à chaque étape clé du traitement.",
+      title: "Pull Request après validation",
+      desc: "Une fois validée, l'agent crée la branche, commit, pousse les changements et ouvre la Pull Request.",
     },
     {
       icon: BarChart3,
-      title: "Rapports & suivi",
-      desc: "Visualisez les bugs déclarés, corrigés et en attente, projet par projet.",
+      title: "Suivi de livrabilité",
+      desc: "Le chef de projet suit en temps réel l'état des bugs et la livrabilité globale de chaque projet.",
     },
   ];
 
@@ -122,18 +147,23 @@ export default function FixbugLanding() {
     },
     {
       n: "02",
-      title: "Analyser",
-      desc: "L'agent IA étudie le rapport et explore le dépôt GitHub du projet.",
+      title: "Prendre en charge",
+      desc: "Un développeur prend le bug en charge sur son projet.",
     },
     {
       n: "03",
-      title: "Corriger",
-      desc: "Il crée une branche, applique un correctif et pousse le commit.",
+      title: "Analyser",
+      desc: "Il sollicite l'agent IA, qui explore le dépôt et propose une correction.",
     },
     {
       n: "04",
       title: "Valider",
-      desc: "Une Pull Request est ouverte ; le chef de projet valide ou rejette.",
+      desc: "Le développeur examine la proposition et la valide, ou en redemande une.",
+    },
+    {
+      n: "05",
+      title: "Pull Request créée",
+      desc: "L'agent commit, pousse les changements et ouvre la Pull Request.",
     },
   ];
 
@@ -167,9 +197,9 @@ export default function FixbugLanding() {
       `}</style>
 
       {/* ------------------------------------------------------------ */}
-      {/* NAVBAR                                                        */}
+      {/* NAVBAR                                                       */}
       {/* ------------------------------------------------------------ */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-white/85 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Logo />
 
@@ -178,7 +208,7 @@ export default function FixbugLanding() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm font-medium text-brand-ink hover:text-slate-800  hover:text-green"
+                className="text-sm font-medium text-[#0B0E17] transition-colors hover:text-emerald-600"
               >
                 {l.label}
               </a>
@@ -186,23 +216,23 @@ export default function FixbugLanding() {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <a
+            <Link
               href="/connexion"
-              className="text-sm font-semibold text-brand-ink transition-colors hover:text-slate-700"
+              className="text-sm font-semibold text-[#0B0E17] transition-colors hover:text-slate-600"
             >
               Connexion
-            </a>
-            <a
+            </Link>
+            <Link
               href="/inscription"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B0E17] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-slate-800"
             >
-              s'incrire
-            </a>
+              S'inscrire
+            </Link>
           </div>
 
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="text-slate-200 lg:hidden"
+            className="text-[#0B0E17] lg:hidden"
             aria-label="Ouvrir le menu"
           >
             {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -210,28 +240,33 @@ export default function FixbugLanding() {
         </div>
 
         {menuOpen && (
-          <div className="border-t border-white/10 bg-[#0B0E17] px-6 py-5 lg:hidden">
+          <div className="border-t border-slate-200 bg-white px-6 py-5 lg:hidden">
             <nav className="flex flex-col gap-4">
               {navLinks.map((l) => (
                 <a
                   key={l.label}
                   href={l.href}
                   onClick={() => setMenuOpen(false)}
-                  className="text-sm font-medium text-slate-300 hover:text-white"
+                  className="text-sm font-medium text-[#0B0E17] hover:text-emerald-600"
                 >
                   {l.label}
                 </a>
               ))}
-              <div className="mt-2 flex flex-col gap-3 border-t border-white/10 pt-4">
-                <a href="/connexion" className="text-sm font-semibold text-slate-200">
-                  Connexion
-                </a>
-                <a
-                  href="/inscription"
-                  className="rounded-lg bg-white px-4 py-2 text-center text-sm font-semibold text-[#0B0E17]"
+              <div className="mt-2 flex flex-col gap-3 border-t border-slate-200 pt-4">
+                <Link
+                  href="/connexion"
+                  className="text-sm font-semibold text-[#0B0E17]"
+                  onClick={() => setMenuOpen(false)}
                 >
-                  Commencer gratuitement
-                </a>
+                  Connexion
+                </Link>
+                <Link
+                  href="/inscription"
+                  className="rounded-lg bg-[#0B0E17] px-4 py-2 text-center text-sm font-semibold text-white"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  S'inscrire
+                </Link>
               </div>
             </nav>
           </div>
@@ -239,70 +274,76 @@ export default function FixbugLanding() {
       </header>
 
       {/* ------------------------------------------------------------ */}
-      {/* HERO                                                          */}
+      {/* HERO                                                         */}
       {/* ------------------------------------------------------------ */}
       <section className="relative overflow-hidden bg-white pb-24 pt-40">
-        <div className="pointer-events-none absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-emerald-600/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full  blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-slate-200/60 blur-3xl" />
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2">
           {/* Texte */}
           <div>
-            <div className="reveal inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-              <span className="" />
-              
+            <div className="reveal inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-mono text-xs uppercase tracking-wider text-slate-600">
+                IA supervisée par un développeur
+              </span>
             </div>
 
-            <h1 className="reveal d1 mt-6 font-serif text-4xl font-bold leading-tight tracking-tight text-black sm:text-5xl">
+            <h1 className="reveal d1 mt-6 font-serif text-4xl font-bold leading-tight tracking-tight text-[#0B0E17] sm:text-5xl">
               Un bug signalé.
               <br />
-              Une <span className="text-emerald-400">Pull Request</span> livrée.
+              Une correction <span className="text-emerald-500">validée par un humain</span>.
             </h1>
 
-            <p className="reveal d2 mt-6 max-w-lg text-lg leading-relaxed text-slate-400">
-              Fixbug connecte vos testeurs, vos chefs de projet et un agent IA
-              à votre dépôt GitHub. Un bug est déclaré, l'IA l'analyse et
-              propose une correction ,vous gardez toujours la main sur la
-              validation.
+            <p className="reveal d2 mt-6 max-w-lg text-lg leading-relaxed text-slate-500">
+              Un testeur signale, un développeur sollicite l'agent IA et examine
+              sa proposition, puis la valide. Ce n'est qu'à ce moment que la
+              Pull Request est ouverte sur GitHub — le contrôle reste humain à
+              chaque étape sensible.
             </p>
 
             <div className="reveal d3 mt-8 flex flex-wrap items-center gap-4">
-              <a
+              <Link
                 href="/inscription"
-                className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-[#0B0E17] transition-all hover:bg-slate-100"
+                className="group inline-flex items-center gap-2 rounded-lg bg-[#0B0E17] px-6 py-3 font-semibold text-white transition-all hover:bg-slate-800"
               >
                 Créer un compte gratuit
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </a>
+              </Link>
               <a
                 href="#comment-ca-marche"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-6 py-3 font-semibold text-brand-ink transition-colors hover:border-white/30 hover:text-slate-500"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-6 py-3 font-semibold text-[#0B0E17] transition-colors hover:border-slate-400 hover:bg-slate-50"
               >
                 Voir comment ça marche
               </a>
             </div>
 
+            <div className="reveal d4 mt-10 flex items-center gap-2 text-sm text-slate-500">
+              <IconeGithub  className="h-4 w-4" />
+              <span>Connexion OAuth GitHub pour chefs de projet et développeurs.</span>
+            </div>
           </div>
 
           {/* Visuel */}
           <div className="reveal d2 relative">
-            <div className="relative animate-float-delayed  h-96 w-full overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
+            <div className="relative h-96 w-full overflow-hidden rounded-3xl border border-slate-200 shadow-2xl">
               <img
-                src="https://fr.pinterest.com/pin/4599230842078909824/"
-                alt="Développeur analysant du code sur plusieurs écrans"
+                src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000&auto=format&fit=crop"
+                alt="Développeur analysant une proposition de correction"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E17]/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E17]/50 via-transparent to-transparent" />
             </div>
+
             
 
-            {/* Carte flottante : bug corrigé */}
             <div className="animate-float-delayed absolute -bottom-6 -left-6 hidden items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-xl sm:flex">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
                 <Check className="h-4 w-4 text-emerald-600" strokeWidth={3} />
               </span>
               <span className="text-sm font-medium text-slate-800">
-                Bug corrigé automatiquement
+                Validé par le développeur
               </span>
             </div>
           </div>
@@ -310,7 +351,7 @@ export default function FixbugLanding() {
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* BANDE OUTILS                                                  */}
+      {/* BANDE OUTILS                                                 */}
       {/* ------------------------------------------------------------ */}
       <section className="border-b border-slate-100 bg-white py-10">
         <div className="mx-auto max-w-7xl px-6">
@@ -319,40 +360,75 @@ export default function FixbugLanding() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-slate-400">
             <div className="flex items-center gap-2">
-              
-              <span className="text-sm font-medium">GitHub</span>
+              <IconeGithub  className="h-5 w-5" />
+              <span className="text-sm font-medium">GitHub (OAuth + Octokit)</span>
             </div>
             <div className="flex items-center gap-2">
               <Code2 className="h-5 w-5" />
-              <span className="text-sm font-medium">React / Next.js</span>
+              <span className="text-sm font-medium">React / Next.js / NestJS</span>
             </div>
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              <span className="text-sm font-medium">MySQL</span>
+              <span className="text-sm font-medium">PostgreSQL</span>
             </div>
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
-              <span className="text-sm font-medium">API Gemini</span>
+              <span className="text-sm font-medium">OpenRouter</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* FONCTIONNALITÉS                                               */}
+      {/* LES RÔLES                                                    */}
       {/* ------------------------------------------------------------ */}
-      <section id="fonctionnalites" className="bg-slate-50 py-24">
+      <section id="roles" className="bg-slate-50 py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="reveal mx-auto max-w-2xl text-center">
+            <p className="font-mono text-xs uppercase tracking-wider text-emerald-600">
+              Les rôles
+            </p>
+            <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-[#0B0E17] sm:text-4xl">
+              Trois rôles, des responsabilités clairement délimitées
+            </h2>
+            <p className="mt-4 text-slate-600">
+              Chaque acteur agit dans son périmètre : le testeur signale, le
+              développeur corrige avec l'IA, le chef de projet pilote.
+            </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {roles.map((r, i) => (
+              <div
+                key={r.title}
+                className={`reveal d${i + 1} rounded-2xl border border-slate-200 bg-white p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg sm:text-left`}
+              >
+                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-[#0B0E17] text-white sm:mx-0">
+                  <r.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 text-base font-semibold text-[#0B0E17]">{r.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{r.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------ */}
+      {/* FONCTIONNALITÉS                                              */}
+      {/* ------------------------------------------------------------ */}
+      <section id="fonctionnalites" className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="reveal mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-wider text-emerald-600">
               Fonctionnalités
             </p>
             <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-[#0B0E17] sm:text-4xl">
-              Tout ce qu'il faut à votre équipe pour écraser les bugs
+              Tout ce qu'il faut pour corriger sans perdre le contrôle
             </h2>
             <p className="mt-4 text-slate-600">
               De la déclaration d'une anomalie à la Pull Request validée,
-              chaque étape est centralisée et tracée.
+              chaque étape est centralisée, tracée, et supervisée par un humain.
             </p>
           </div>
 
@@ -384,23 +460,23 @@ export default function FixbugLanding() {
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* COMMENT ÇA MARCHE                                             */}
+      {/* COMMENT ÇA MARCHE                                            */}
       {/* ------------------------------------------------------------ */}
-      <section id="comment-ca-marche" className="bg-white py-24">
+      <section id="comment-ca-marche" className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="reveal mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-wider text-emerald-600">
               Comment ça marche
             </p>
             <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-[#0B0E17] sm:text-4xl">
-              Du signalement à la Pull Request, en 4 étapes
+              Du signalement à la Pull Request, en 5 étapes
             </h2>
           </div>
 
-          <div className="relative mt-16 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="pointer-events-none absolute left-0 right-0 top-6 hidden border-t border-dashed border-slate-200 lg:block" />
+          <div className="relative mt-16 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="pointer-events-none absolute left-0 right-0 top-6 hidden border-t border-dashed border-slate-300 lg:block" />
             {steps.map((s, i) => (
-              <div key={s.n} className={`reveal d${i + 1} relative`}>
+              <div key={s.n} className={`reveal d${(i % 6) + 1} relative`}>
                 <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white font-mono text-sm text-[#0B0E17] shadow-sm">
                   {s.n}
                 </span>
@@ -417,39 +493,33 @@ export default function FixbugLanding() {
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* POURQUOI FIXBUG                                               */}
+      {/* POURQUOI FIXBUG                                              */}
       {/* ------------------------------------------------------------ */}
-      <section id="pourquoi" className="bg-slate-50 py-24">
+      <section className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-3">
             <div className="reveal d1 text-center sm:text-left">
               <ShieldCheck className="mx-auto h-8 w-8 text-[#0B0E17] sm:mx-0" />
-              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">
-                Sécurisé
-              </h3>
+              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">Sécurisé</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Authentification protégée, droits d'accès par rôle et
-                chiffrement des mots de passe.
+                Authentification classique et OAuth GitHub, droits d'accès par
+                rôle, chiffrement des mots de passe et des tokens sensibles.
               </p>
             </div>
             <div className="reveal d2 text-center sm:text-left">
-              <Zap className="mx-auto h-8 w-8 text-[#0B0E17] sm:mx-0" />
-              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">
-                Rapide
-              </h3>
+              <UserCheck className="mx-auto h-8 w-8 text-[#0B0E17] sm:mx-0" />
+              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">Sous contrôle</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Plusieurs projets et plusieurs bugs traités en parallèle,
-                sans ralentir votre équipe.
+                L'IA n'agit jamais seule : elle attend une demande explicite et
+                une validation avant tout envoi vers GitHub.
               </p>
             </div>
             <div className="reveal d3 text-center sm:text-left">
               <Users className="mx-auto h-8 w-8 text-[#0B0E17] sm:mx-0" />
-              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">
-                Collaboratif
-              </h3>
+              <h3 className="mt-4 text-lg font-semibold text-[#0B0E17]">Collaboratif</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Chefs de projet et testeurs travaillent ensemble, avec des
-                invitations simples et un suivi partagé.
+                Testeurs, développeurs et chefs de projet travaillent ensemble,
+                avec des invitations simples et un suivi partagé.
               </p>
             </div>
           </div>
@@ -457,67 +527,78 @@ export default function FixbugLanding() {
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* CTA FINAL                                                     */}
+      {/* CTA FINAL                                                    */}
       {/* ------------------------------------------------------------ */}
       <section className="bg-[#0B0E17] py-20">
         <div className="reveal mx-auto max-w-3xl px-6 text-center">
           <h2 className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Prêt à laisser l'IA écraser vos bugs ?
+            Prêt à corriger vos bugs sans perdre le contrôle ?
           </h2>
           <p className="mt-4 text-slate-400">
-            Créez votre premier projet, connectez votre dépôt GitHub et
-            laissez Fixbug s'occuper du reste.
+            Créez votre projet, connectez votre dépôt GitHub et laissez vos
+            développeurs superviser l'IA à chaque étape.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a
+            <Link
               href="/inscription"
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-[#0B0E17] transition-all hover:bg-slate-100"
             >
               Créer un compte gratuit
               <ArrowRight className="h-4 w-4" />
-            </a>
-            <a
+            </Link>
+            <Link
               href="/connexion"
               className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-6 py-3 font-semibold text-slate-200 transition-colors hover:border-white/30 hover:text-white"
             >
               Se connecter
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* FOOTER                                                        */}
+      {/* FOOTER                                                       */}
       {/* ------------------------------------------------------------ */}
       <footer className="bg-[#e7eaf2] py-14">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
-            <div className="col-span-2 mr-3.5">
+            <div className="col-span-2">
               <Logo />
               <p className="mt-4 max-w-xs text-sm text-slate-500">
-                La plateforme qui relie vos testeurs, vos chefs de projet et
-                un agent IA à votre dépôt GitHub.
+                La plateforme qui relie testeurs, développeurs, chefs de projet
+                et un agent IA supervisé à votre dépôt GitHub.
               </p>
-              
+              <div className="mt-5 flex items-center gap-4 text-slate-500">
+                <a href="#" aria-label="GitHub" className="hover:text-[#0B0E17]">
+                  <IconeGithub  className="h-4 w-4" />
+                </a>
+              </div>
             </div>
 
-            <div className="ml-20">
-              <p className="font-mono text-xs uppercase tracking-wider text-slate-900">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-wider text-slate-500">
                 Produit
               </p>
-              <ul className="mt-4 space-y-2.5 text-sm text-brand-ink">
-                <li><a href="#fonctionnalites" className="hover:text-slate-00">Fonctionnalités</a></li>
-                <li><a href="#comment-ca-marche" className="hover:text-slate-700">Comment ça marche</a></li>
-                <li><a href="/inscription" className="hover:text-slate-700">Inscription</a></li>
-                <li><a href="/connexion" className="hover:text-slate-700">Connexion</a></li>
+              <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+                <li><a href="#fonctionnalites" className="hover:text-[#0B0E17]">Fonctionnalités</a></li>
+                <li><a href="#comment-ca-marche" className="hover:text-[#0B0E17]">Comment ça marche</a></li>
+                <li><a href="#roles" className="hover:text-[#0B0E17]">Les rôles</a></li>
               </ul>
             </div>
 
-            
+            <div>
+              <p className="font-mono text-xs uppercase tracking-wider text-slate-500">
+                Compte
+              </p>
+              <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+                <li><Link href="/inscription" className="hover:text-[#0B0E17]">Inscription</Link></li>
+                <li><Link href="/connexion" className="hover:text-[#0B0E17]">Connexion</Link></li>
+              </ul>
+            </div>
           </div>
 
-          <div className="mt-12 border-t border-white/10 pt-6 text-center text-xs text-slate-600">
-             @{new Date().getFullYear()} Fixbug. 
+          <div className="mt-12 border-t border-slate-300 pt-6 text-center text-xs text-slate-500">
+            © {new Date().getFullYear()} Fixbug. Tous droits réservés.
           </div>
         </div>
       </footer>

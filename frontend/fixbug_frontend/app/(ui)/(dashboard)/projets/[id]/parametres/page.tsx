@@ -130,11 +130,7 @@ export default function ParametresProjetPage() {
           </div>
         </div>
 
-        {succes && (
-          <p className="flex items-center gap-1.5 text-sm text-emerald-600">
-            <CheckCircle2 className="h-4 w-4" /> Modifications enregistrées.
-          </p>
-        )}
+       
 
         <div className="flex justify-end border-t border-slate-100 pt-4">
           <Button

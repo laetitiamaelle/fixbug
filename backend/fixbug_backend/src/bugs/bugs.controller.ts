@@ -6,6 +6,7 @@ import { JwtAuthGuard } from 'src/users/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/users/guards/roles.guards';
 import { Roles } from 'src/users/decorators/roles.decorators';
 import { CurrentUser } from 'src/users/decorators/current-user.decorator';
+import { Proposition } from '../agent-ia/agent-ia.service'; 
 
 @Controller('bugs')
 @UseGuards(JwtAuthGuard)
@@ -23,13 +24,6 @@ export class BugsController {
     return this.bugsService.declarerBug(utilisateur.id, dto, fichiers);
   }
 
-  @Get(':id/fichiers')
-  @UseGuards(RolesGuard)
-  @Roles('DEVELOPPEUR')
-  obtenirFichiers(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
-    return this.bugsService.obtenirFichiersDuBug(id, u.id);
-  }
-
   @Get()
   listerBugs(@CurrentUser() utilisateur: { id: number; role: string }, @Query('projetId') projetId?: string) {
     return this.bugsService.listerBugs(utilisateur, projetId ? Number(projetId) : undefined);
@@ -39,5 +33,24 @@ export class BugsController {
   @Roles('DEVELOPPEUR')
   prendreEnCharge(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
     return this.bugsService.prendreEnCharge(id, u.id);
+  }
+  @Get(':id/fichiers')
+  @UseGuards(RolesGuard)
+  @Roles('DEVELOPPEUR')
+  obtenirFichiers(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
+    return this.bugsService.obtenirFichiersDuBug(id, u.id);
+  }
+  @Patch(':id/demander-analyse')
+  @UseGuards(RolesGuard)
+  @Roles('DEVELOPPEUR')
+  demanderAnalyse(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { instructionDeveloppeur?: string }) {
+    return this.bugsService.demanderAnalyseIA(id, u.id, body?.instructionDeveloppeur);
+  }
+
+  @Post(':id/valider-envoyer')
+  @UseGuards(RolesGuard)
+  @Roles('DEVELOPPEUR')
+  validerEtEnvoyer(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
+    return this.bugsService.validerEtEnvoyer(id, u.id, body.propositions);
   }
 }
