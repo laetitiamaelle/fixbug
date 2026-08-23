@@ -32,8 +32,10 @@ export class BugsService {
 
     const captures = fichiers?.length ? await this.cloudinaryService.uploaderPlusieursImages(fichiers) : [];
 
+    const titre = await this.agentIaService.genererTitre(dto.description);
+
     const bug = await this.prisma.bug.create({
-      data: { titre: dto.titre, description: dto.description, captures, projetId: dto.projetId, testeurId: utilisateurId },
+      data: { titre, description: dto.description, captures, projetId: dto.projetId, testeurId: utilisateurId },
       include: { testeur: { select: { nom: true, prenom: true } } },
     });
 

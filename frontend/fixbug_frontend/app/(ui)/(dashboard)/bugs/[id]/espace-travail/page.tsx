@@ -9,7 +9,7 @@ import Editor from "@monaco-editor/react";
 import "xterm/css/xterm.css";
 import {
   Send, Loader2, Code2, Eye, CheckCircle2, XCircle,
-  Bot, ExternalLink, TerminalSquare, Sparkles,
+  Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, PanelLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -47,7 +47,8 @@ export default function EspaceTravailPage() {
   const terminalRef = useRef<HTMLDivElement>(null);
   const dejaLance = useRef(false);
 
-  // --- Chat / IA ---
+  // --- Chat /
+  const [chatOuvert, setChatOuvert] = useState(false);
   const [messages, setMessages] = useState<MessageChat[]>([]);
   const [saisie, setSaisie] = useState("");
   const [enReflexion, setEnReflexion] = useState(false);
@@ -76,9 +77,14 @@ export default function EspaceTravailPage() {
     if (terminalRef.current) {
       terminal.open(terminalRef.current);
       fitAddon.fit();
-    }
-    window.addEventListener("resize", () => fitAddon.fit());
 
+      const observer = new ResizeObserver(() => {
+      try { fitAddon.fit(); } catch {}
+    });
+    observer.observe(terminalRef.current);
+    }
+
+   
     terminal.onData((data) => {
       const processus = processusActifRef.current;
       if (processus) {
@@ -109,8 +115,13 @@ export default function EspaceTravailPage() {
         install.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
         await install.exit;
 
-        setStatutEnv("Démarrage du serveur de développement...");
-        const dev = await instance.spawn("npm", ["run", "dev"]);
+        const commande = detecterCommandeDemarrage(recus); 
+        if (!commande) {
+          setStatutEnv(" Aucun script dev/start/serve trouvé dans package.json");
+          return;
+        }
+        setStatutEnv(`Démarrage (${commande.join(" ")})...`);
+        const dev = await instance.spawn(commande[0], commande.slice(1)); // NOUVEAU
         processusActifRef.current = dev;
         dev.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
       } else {
@@ -205,6 +216,20 @@ export default function EspaceTravailPage() {
     }
   }
 
+  //fonction pour demarrer le server
+
+  function detecterCommandeDemarrage(fichiers: FichierRecu[]): string[] | null {
+    const packageJson = fichiers.find((f) => f.chemin === "package.json");
+    if (!packageJson) return null;
+    try {
+      const scripts = JSON.parse(packageJson.contenu).scripts || {};
+      for (const nom of ["dev", "start", "serve"]) {
+        if (scripts[nom]) return ["npm", "run", nom];
+      }
+    } catch { }
+    return null;
+  }
+
   function handleEditionManuelle(nouveauContenu: string | undefined) {
     if (!fichierActif || nouveauContenu === undefined) return;
     setFichiers((prev) => ({ ...prev, [fichierActif]: nouveauContenu }));
@@ -213,7 +238,7 @@ export default function EspaceTravailPage() {
         ? prev.map((p) => (p.cheminFichier === fichierActif ? { ...p, nouveauContenu } : p))
         : prev,
     );
-    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => {});
+    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => { });
   }
 
   async function envoyerSurGithub() {
@@ -240,10 +265,12 @@ export default function EspaceTravailPage() {
   const nomsFichiers = Object.keys(fichiers);
 
   return (
-    <div className="flex h-[calc(100vh-96px)] flex-col gap-3">
+    <div className="flex h-[calc(100vh-80px)] flex-col gap-3 p-2 sm:p-4">
       {/* Barre supérieure */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
         <div className="flex items-center gap-2.5">
+
+
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#12151F]">
             <Sparkles className="h-4 w-4 text-emerald-400" />
           </div>
@@ -271,99 +298,143 @@ export default function EspaceTravailPage() {
             onClick={envoyerSurGithub}
             disabled={envoiEnCours || propositions.length === 0}
             size="sm"
-            className="gap-1.5 bg-[#12151F] hover:bg-[#12151F]/90"
+            className="gap-1.5 bg-[#12151F] hover:bg-[#12151F]/90 text-xs sm:text-sm"
           >
             {envoiEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <IconeGithub className="h-3.5 w-3.5" />}
-            {resultatPR ? "Mettre à jour la Pull Request" : "Créer la Pull Request"}
+            {resultatPR ? "Mettre à jour PR" : "Créer la PR"}
           </Button>
         </div>
       </div>
 
       {/* Corps redimensionnable */}
-      <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {/* Chat */}
-        <ResizablePanel defaultSize={30} minSize={22} maxSize={45}>
-          <div className="flex h-full flex-col">
-            <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-              <Bot className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-medium text-[#12151F]">Assistant Fixbug</span>
-            </div>
+      <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        {/* Chat de l'Agent IA (Sidebar escamotable) */}
+        {chatOuvert && (
+          <>
+            <ResizablePanel defaultSize={150} minSize={150} maxSize={250} id="panel-chat">
+              <div className="flex h-full flex-col bg-slate-50/30">
+                {/* En-tête du Chat avec le bouton de masquage */}
+                <div className="flex items-center justify-between border-b border-slate-100 bg-white px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-semibold text-[#12151F]">Assistant Fixbug</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                      IA Active
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setChatOuvert(false)}
+                      title="Masquer le chat"
+                      className="h-7 w-7 text-slate-500 hover:bg-slate-100"
+                    >
+                      <PanelLeftClose className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-              {messages.map((m, i) => (
-                <BulleMessage key={i} message={m} />
-              ))}
-              <div ref={finChatRef} />
-            </div>
+                <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                  {messages.map((m, i) => (
+                    <BulleMessage key={i} message={m} />
+                  ))}
+                  <div ref={finChatRef} />
+                </div>
 
-            <form
-              onSubmit={(e) => { e.preventDefault(); envoyerMessage(); }}
-              className="flex items-center gap-2 border-t border-slate-100 p-2.5"
-            >
-              <input
-                value={saisie}
-                onChange={(e) => setSaisie(e.target.value)}
-                placeholder="Décrivez ce qu'il faut corriger..."
-                disabled={enReflexion}
-                className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#12151F] disabled:opacity-60"
-              />
-              <Button type="submit" size="sm" disabled={enReflexion || !saisie.trim()} className="h-9 w-9 shrink-0 rounded-full bg-[#12151F] p-0 hover:bg-[#12151F]/90">
-                <Send className="h-3.5 w-3.5" />
-              </Button>
-            </form>
-          </div>
-        </ResizablePanel>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); envoyerMessage(); }}
+                  className="flex items-center gap-2 border-t border-slate-100 bg-white p-3"
+                >
+                  <input
+                    value={saisie}
+                    onChange={(e) => setSaisie(e.target.value)}
+                    placeholder="Décrivez ce qu'il faut corriger..."
+                    disabled={enReflexion}
+                    className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm outline-none transition-colors focus:border-[#12151F] focus:bg-white disabled:opacity-60"
+                  />
+                  <Button type="submit" size="sm" disabled={enReflexion || !saisie.trim()} className="h-9 w-9 shrink-0 rounded-lg bg-[#12151F] p-0 hover:bg-[#12151F]/90">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </div>
+            </ResizablePanel>
 
-        <ResizableHandle withHandle />
+            <ResizableHandle withHandle />
+          </>
+        )}
 
-        {/* Code / Preview + Terminal */}
-        <ResizablePanel defaultSize={70}>
+        {/* Zone Code / FileTree / Preview + Terminal */}
+        <ResizablePanel defaultSize={chatOuvert ? 80 : 100} id="panel-workspace">
           <ResizablePanelGroup orientation="vertical">
-            <ResizablePanel defaultSize={72} minSize={35}>
+            <ResizablePanel defaultSize={70} minSize={35}>
               <div className="flex h-full flex-col">
-                <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2">
+                <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2 bg-white">
+                  {/* Bouton pour réouvrir le chat uniquement quand il est masqué */}
+                  {!chatOuvert && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setChatOuvert(true)}
+                      title="Afficher le chat"
+                      className="h-8 w-8 text-slate-600 hover:bg-slate-100 mr-10"
+                    >
+                      <PanelLeft className="h-4 w-4" /> <p className="font-bold text-brand-green">chat</p>
+                    </Button>
+                  )}
+
                   <OngletBouton actif={vue === "code"} onClick={() => setVue("code")} icone={Code2} label="Code" />
-                  <OngletBouton actif={vue === "preview"} onClick={() => setVue("preview")} icone={Eye} label="Preview" disabled={!urlPreview} />
+                  <OngletBouton actif={vue === "preview"} onClick={() => setVue("preview")} icone={Eye} label="Preview" />
+                  {/* disabled={!urlPreview} */}
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
                   {vue === "code" ? (
-                    <>
-                      <div className="w-56 shrink-0 border-r border-slate-100 bg-slate-50/60">
-                        <FileTree
-                          fichiers={nomsFichiers}
-                          fichierActif={fichierActif}
-                          onSelect={setFichierActif}
-                          fichiersModifies={new Set(propositions.map((p) => p.cheminFichier))}
-                        />
-                      </div>
-                      <div className="flex flex-1 flex-col overflow-hidden">
-                        {fichierActif && (
-                          <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-1.5 text-xs text-slate-400">
-                            {fichierActif.split("/").map((segment, i, arr) => (
-                              <span key={i} className="flex items-center gap-1">
-                                {i > 0 && <span className="text-slate-300">/</span>}
-                                <span className={i === arr.length - 1 ? "font-medium text-slate-600" : ""}>{segment}</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          {fichierActif ? (
-                            <Editor
-                              height="100%"
-                              path={fichierActif}
-                              value={fichiers[fichierActif]}
-                              onChange={handleEditionManuelle}
-                              theme="vs-dark"
-                              options={{ fontSize: 13, minimap: { enabled: false }, padding: { top: 12 } }}
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-sm text-slate-400">Aucun fichier chargé</div>
-                          )}
+                    <ResizablePanelGroup orientation="horizontal" className="flex-1">
+                      {/* Arbre de fichiers redimensionnable */}
+                      <ResizablePanel defaultSize={150} minSize={150} maxSize={200}>
+                        <div className="h-full border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+                          <FileTree
+                            fichiers={nomsFichiers}
+                            fichierActif={fichierActif}
+                            onSelect={setFichierActif}
+                            fichiersModifies={new Set(propositions.map((p) => p.cheminFichier))}
+                          />
                         </div>
-                      </div>
-                    </>
+                      </ResizablePanel>
+
+                      <ResizableHandle withHandle />
+
+                      {/* Éditeur de code */}
+                      <ResizablePanel defaultSize={100}>
+                        <div className="flex h-full flex-col overflow-hidden">
+                          {fichierActif && (
+                            <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-1.5 text-xs text-slate-400 bg-white">
+                              {fichierActif.split("/").map((segment, i, arr) => (
+                                <span key={i} className="flex items-center gap-1">
+                                  {i > 0 && <span className="text-slate-300">/</span>}
+                                  <span className={i === arr.length - 1 ? "font-medium text-slate-600" : ""}>{segment}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            {fichierActif ? (
+                              <Editor
+                                height="100%"
+                                path={fichierActif}
+                                value={fichiers[fichierActif]}
+                                onChange={handleEditionManuelle}
+                                theme="vs-dark"
+                                options={{ fontSize: 13, minimap: { enabled: false }, padding: { top: 12 } }}
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-sm text-slate-400">Aucun fichier chargé</div>
+                            )}
+                          </div>
+                        </div>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
                   ) : urlPreview ? (
                     <iframe src={urlPreview} className="h-full w-full bg-white" />
                   ) : (
@@ -379,7 +450,7 @@ export default function EspaceTravailPage() {
             <ResizableHandle withHandle />
 
             {/* Terminal */}
-            <ResizablePanel defaultSize={28} minSize={12}>
+            <ResizablePanel defaultSize={15} minSize={10}>
               <div className="flex h-full flex-col bg-[#0B0D14]">
                 <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-1.5">
                   <TerminalSquare className="h-3.5 w-3.5 text-slate-400" />
@@ -402,9 +473,8 @@ function OngletBouton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        actif ? "bg-[#12151F] text-white" : "text-slate-500 hover:bg-slate-100"
-      }`}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${actif ? "bg-[#12151F] text-white" : "text-slate-500 hover:bg-slate-100"
+        }`}
     >
       <Icone className="h-3.5 w-3.5" /> {label}
     </button>
@@ -415,7 +485,7 @@ function BulleMessage({ message }: { message: MessageChat }) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#12151F] px-3.5 py-2.5 text-sm text-white">
+        <div className="max-w-[85%] rounded-2xl rounded-br-xs bg-[#12151F] px-4 py-2.5 text-sm text-white shadow-sm leading-relaxed">
           {message.contenu}
         </div>
       </div>
@@ -423,18 +493,18 @@ function BulleMessage({ message }: { message: MessageChat }) {
   }
 
   const config: Record<StatutMessage | "defaut", { icone: React.ElementType; classeIcone: string; classeFond: string }> = {
-    en_cours: { icone: Loader2, classeIcone: "text-blue-500 animate-spin", classeFond: "bg-blue-50/60 border-blue-100" },
-    succes: { icone: CheckCircle2, classeIcone: "text-emerald-500", classeFond: "bg-slate-50 border-slate-100" },
-    echec: { icone: XCircle, classeIcone: "text-red-500", classeFond: "bg-red-50/60 border-red-100" },
-    defaut: { icone: Bot, classeIcone: "text-slate-400", classeFond: "bg-slate-50 border-slate-100" },
+    en_cours: { icone: Loader2, classeIcone: "text-blue-500 animate-spin", classeFond: "bg-blue-50/80 border-blue-100 text-blue-900" },
+    succes: { icone: CheckCircle2, classeIcone: "text-emerald-500", classeFond: "bg-white border-slate-200 text-slate-800 shadow-sm" },
+    echec: { icone: XCircle, classeIcone: "text-red-500", classeFond: "bg-red-50/80 border-red-100 text-red-900" },
+    defaut: { icone: Bot, classeIcone: "text-slate-400", classeFond: "bg-white border-slate-200 text-slate-800 shadow-sm" },
   };
   const { icone: Icone, classeIcone, classeFond } = config[message.statut ?? "defaut"];
 
   return (
     <div className="flex justify-start">
-      <div className={`flex max-w-[90%] items-start gap-2 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-sm text-slate-700 ${classeFond}`}>
-        <Icone className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${classeIcone}`} />
-        <span>{message.contenu}</span>
+      <div className={`flex max-w-[90%] items-start gap-2.5 rounded-2xl rounded-bl-xs border px-4 py-3 text-sm leading-relaxed ${classeFond}`}>
+        <Icone className={`mt-0.5 h-4 w-4 shrink-0 ${classeIcone}`} />
+        <span className="whitespace-pre-wrap">{message.contenu}</span>
       </div>
     </div>
   );

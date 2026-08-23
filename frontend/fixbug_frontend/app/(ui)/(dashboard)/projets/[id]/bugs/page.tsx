@@ -101,7 +101,7 @@ export default function TousLesBugsPage() {
                   )}
                   {estDeveloppeur && estPrisParMoi && (
                     <Button size="sm" onClick={() => router.push(`/bugs/${bug.id}/espace-travail`)} className="bg-[#12151F] hover:bg-[#12151F]/90">
-                      Ouvrir <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                      traiter<ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
                   )}
                 </div>
