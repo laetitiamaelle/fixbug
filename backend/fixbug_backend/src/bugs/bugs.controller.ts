@@ -53,4 +53,17 @@ export class BugsController {
   validerEtEnvoyer(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
     return this.bugsService.validerEtEnvoyer(id, u.id, body.propositions);
   }
+  // bugs.controller.ts — AJOUT
+@Post('chat-testeur')
+@UseGuards(RolesGuard)
+@Roles('TESTEUR')
+@UseInterceptors(FilesInterceptor('captures')) // même mécanisme Multer que ta route /bugs existante
+discuterEtDeclarer(
+  @CurrentUser() u: { id: number },
+  @Body() body: { projetId: string; message: string; historique: string }, // historique envoyé en JSON stringifié depuis le frontend
+  @UploadedFiles() fichiers: Express.Multer.File[],
+) {
+  const historique = body.historique ? JSON.parse(body.historique) : [];
+  return this.bugsService.discuterEtDeclarer(u.id, Number(body.projetId), body.message, historique, fichiers);
+}
 }

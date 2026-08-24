@@ -149,5 +149,47 @@ export class BugsService {
     await this.notificationsService.creerNotifications(bug.projet.chefProjetId, 'Pull Request créée', `PR #${pr.numero} créée pour le bug #${bug.id}`);
     return bugMisAJour;
   }
+
+  // bugs.service.ts — NOUVELLE méthode, orchestre la conversation + création réelle du bug
+async discuterEtDeclarer(
+  utilisateurId: number,
+  projetId: number,
+  message: string,
+  historique: { role: 'user' | 'assistant'; contenu: string }[],
+  fichiers: Express.Multer.File[],
+) {
+  // Vérification d'accès, comme sur declarerBug existant
+  const projet = await this.prisma.projet.findUnique({ where: { id: projetId } });
+  if (!projet) throw new NotFoundException('Projet introuvable');
+
+  // On upload les images AVANT d'appeler l'IA, pour pouvoir les lui transmettre
+  // en même temps que le message (analyse multimodale) ET les réutiliser
+  // ensuite si un bug est réellement créé — un seul upload, deux usages.
+  const captures = fichiers?.length ? await this.cloudinaryService.uploaderPlusieursImages(fichiers) : [];
+
+  const resultat = await this.agentIaService.discuterAvecTesteur(message, historique, captures);
+
+  if (resultat.type === 'bug_declare') {
+    // L'IA a jugé que c'était un vrai bug : on crée réellement l'enregistrement
+    const bug = await this.prisma.bug.create({
+      data: { titre: resultat.titre, description: resultat.description, captures, projetId, testeurId: utilisateurId },
+      include: { testeur: { select: { nom: true, prenom: true } } },
+    });
+
+    const estProprietaire = projet.chefProjetId === utilisateurId;
+    if (!estProprietaire) {
+      await this.notificationsService.creerNotifications(
+        projet.chefProjetId,
+        'Nouveau bug déclaré',
+        `Un nouveau bug a été signalé sur le projet "${projet.nom}"`,
+      );
+    }
+
+    return { type: 'bug_declare' as const, bug };
+  }
+
+  // Simple réponse conversationnelle, rien n'est enregistré
+  return { type: 'message' as const, contenu: resultat.contenu };
+}
 }
 
