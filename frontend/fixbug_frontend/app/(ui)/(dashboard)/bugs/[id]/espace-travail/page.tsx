@@ -9,7 +9,7 @@ import Editor from "@monaco-editor/react";
 import "xterm/css/xterm.css";
 import {
   Send, Loader2, Code2, Eye, CheckCircle2, XCircle,
-  Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, PanelLeft
+  Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, PanelLeft, AlertCircle, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -31,6 +31,17 @@ type StatutMessage = "en_cours" | "succes" | "echec";
 type MessageChat = { role: "user" | "assistant"; contenu: string; statut?: StatutMessage };
 type ResultatPR = { url: string; numeroPR: number } | null;
 
+// AJOUT (point D) : remplace l'ancien `propositions: Proposition[]` plat.
+// Chaque modification garde son contenu d'avant (pour pouvoir "Rejeter" = revenir en arrière)
+// et un statut individuel, au lieu d'être appliquée automatiquement.
+type EtatModification = {
+  cheminFichier: string;
+  contenuOriginal: string;
+  contenuPropose: string;
+  explication: string;
+  statut: "en_attente" | "accepte" | "rejete";
+};
+
 export default function EspaceTravailPage() {
   const params = useParams();
   const bugId = params.id;
@@ -46,13 +57,18 @@ export default function EspaceTravailPage() {
   const processusActifRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const dejaLance = useRef(false);
+  const [bug, setBug] = useState<{ titre: string | null; description: string; captures: string[] } | null>(null);
+  const [detailsBugOuverts, setDetailsBugOuverts] = useState(true);
 
-  // --- Chat /
+  // --- Chat ---
   const [chatOuvert, setChatOuvert] = useState(false);
   const [messages, setMessages] = useState<MessageChat[]>([]);
   const [saisie, setSaisie] = useState("");
   const [enReflexion, setEnReflexion] = useState(false);
-  const [propositions, setPropositions] = useState<Proposition[]>([]);
+
+  // MODIFIÉ (point D) : `propositions` devient `modifications`, avec le nouveau type EtatModification
+  const [modifications, setModifications] = useState<EtatModification[]>([]);
+
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [resultatPR, setResultatPR] = useState<ResultatPR>(null);
   const finChatRef = useRef<HTMLDivElement>(null);
@@ -79,12 +95,11 @@ export default function EspaceTravailPage() {
       fitAddon.fit();
 
       const observer = new ResizeObserver(() => {
-      try { fitAddon.fit(); } catch {}
-    });
-    observer.observe(terminalRef.current);
+        try { fitAddon.fit(); } catch {}
+      });
+      observer.observe(terminalRef.current);
     }
 
-   
     terminal.onData((data) => {
       const processus = processusActifRef.current;
       if (processus) {
@@ -95,6 +110,41 @@ export default function EspaceTravailPage() {
     });
 
     async function demarrer() {
+      // MODIFIÉ (point E) : on ne fait plus juste `setBug(data)`, on reconstruit aussi
+      // le chat ET les dernières modifications connues à partir de `messagesDeveloppeur`
+      // (nouveau champ JSON sur le modèle Bug — voir schema.prisma) pour que tout survive au F5.
+      apiFetch(`/bugs/${bugId}`).then((data) => {
+        setBug(data);
+
+        const historique = (data.messagesDeveloppeur as any[]) ?? [];
+        const messagesReconstruits: MessageChat[] = historique.map((m) => ({
+          role: m.role,
+          contenu: m.contenu,
+          statut: m.role === "assistant" ? "succes" : undefined,
+        }));
+        if (messagesReconstruits.length > 0) {
+          setMessages(messagesReconstruits);
+        }
+
+        const dernierTourAssistant = [...historique].reverse().find(
+          (m) => m.role === "assistant" && m.propositions?.length,
+        );
+        if (dernierTourAssistant) {
+          setModifications(
+            dernierTourAssistant.propositions.map((p: Proposition) => ({
+              cheminFichier: p.cheminFichier,
+              // Limite connue : après reload on ne connaît plus le contenu exact d'avant
+              // cette proposition (pas encore stocké côté backend). "Rejeter" restera donc
+              // approximatif pour un historique rechargé, contrairement à la session en cours.
+              contenuOriginal: "",
+              contenuPropose: p.nouveauContenu,
+              explication: p.explication,
+              statut: "en_attente",
+            })),
+          );
+        }
+      }).catch(() => setBug(null));
+
       const recus: FichierRecu[] = await apiFetch(`/bugs/${bugId}/fichiers`);
       const carte = Object.fromEntries(recus.map((f) => [f.chemin, f.contenu]));
       setFichiers(carte);
@@ -115,13 +165,13 @@ export default function EspaceTravailPage() {
         install.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
         await install.exit;
 
-        const commande = detecterCommandeDemarrage(recus); 
+        const commande = detecterCommandeDemarrage(recus);
         if (!commande) {
           setStatutEnv(" Aucun script dev/start/serve trouvé dans package.json");
           return;
         }
         setStatutEnv(`Démarrage (${commande.join(" ")})...`);
-        const dev = await instance.spawn(commande[0], commande.slice(1)); // NOUVEAU
+        const dev = await instance.spawn(commande[0], commande.slice(1));
         processusActifRef.current = dev;
         dev.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
       } else {
@@ -137,13 +187,15 @@ export default function EspaceTravailPage() {
         setUrlPreview(url);
       });
 
-      setMessages([
-        {
-          role: "assistant",
-          contenu: "Environnement prêt. Décrivez-moi ce que vous voulez corriger — je vais explorer le code et proposer une correction.",
-          statut: "succes",
-        },
-      ]);
+      setMessages((prev) =>
+        prev.length > 0
+          ? prev
+          : [{
+              role: "assistant",
+              contenu: "Environnement prêt. Décrivez-moi ce que vous voulez corriger — je vais explorer le code et proposer une correction.",
+              statut: "succes",
+            }],
+      );
     }
 
     demarrer().catch((err) => setStatutEnv("Erreur : " + err.message));
@@ -191,7 +243,28 @@ export default function EspaceTravailPage() {
       });
 
       if (nouvelles.length > 0) {
-        setPropositions(nouvelles);
+        // MODIFIÉ (point D) : on n'écrase plus `propositions`, on fusionne dans `modifications`
+        // en gardant `contenuOriginal` = ce qu'il y avait avant CE tour précis, et un statut
+        // "en_attente" — plus jamais appliqué automatiquement en "accepté".
+        setModifications((prev) => {
+          const copie = [...prev];
+          nouvelles.forEach((p: Proposition) => {
+            const indexExistant = copie.findIndex((m) => m.cheminFichier === p.cheminFichier);
+            const nouvelleEntree: EtatModification = {
+              cheminFichier: p.cheminFichier,
+              contenuOriginal: fichiers[p.cheminFichier] ?? "",
+              contenuPropose: p.nouveauContenu,
+              explication: p.explication,
+              statut: "en_attente",
+            };
+            if (indexExistant >= 0) copie[indexExistant] = nouvelleEntree;
+            else copie.push(nouvelleEntree);
+          });
+          return copie;
+        });
+
+        // On affiche quand même le résultat dans l'éditeur/preview pour que le développeur
+        // puisse juger avant de décider — mais ce n'est pas encore "accepté".
         setFichiers((prev) => {
           const c = { ...prev };
           nouvelles.forEach((p: Proposition) => { c[p.cheminFichier] = p.nouveauContenu; });
@@ -216,8 +289,6 @@ export default function EspaceTravailPage() {
     }
   }
 
-  //fonction pour demarrer le server
-
   function detecterCommandeDemarrage(fichiers: FichierRecu[]): string[] | null {
     const packageJson = fichiers.find((f) => f.chemin === "package.json");
     if (!packageJson) return null;
@@ -226,31 +297,58 @@ export default function EspaceTravailPage() {
       for (const nom of ["dev", "start", "serve"]) {
         if (scripts[nom]) return ["npm", "run", nom];
       }
-    } catch { }
+    } catch {}
     return null;
   }
 
   function handleEditionManuelle(nouveauContenu: string | undefined) {
     if (!fichierActif || nouveauContenu === undefined) return;
     setFichiers((prev) => ({ ...prev, [fichierActif]: nouveauContenu }));
-    setPropositions((prev) =>
-      prev.some((p) => p.cheminFichier === fichierActif)
-        ? prev.map((p) => (p.cheminFichier === fichierActif ? { ...p, nouveauContenu } : p))
+    // MODIFIÉ : référence `modifications` au lieu de `propositions`
+    setModifications((prev) =>
+      prev.some((m) => m.cheminFichier === fichierActif)
+        ? prev.map((m) => (m.cheminFichier === fichierActif ? { ...m, contenuPropose: nouveauContenu } : m))
         : prev,
     );
-    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => { });
+    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => {});
+  }
+
+  // AJOUT (point D) : les deux actions du panneau "Modifications proposées"
+  function accepterModification(chemin: string) {
+    setModifications((prev) => prev.map((m) => (m.cheminFichier === chemin ? { ...m, statut: "accepte" } : m)));
+    toast.success(`Modification acceptée : ${chemin}`);
+  }
+
+  function rejeterModification(chemin: string) {
+    const mod = modifications.find((m) => m.cheminFichier === chemin);
+    if (!mod) return;
+
+    // "Rejeter" = réécrire le contenu d'AVANT cette proposition, dans l'éditeur ET WebContainer,
+    // pour que la preview reflète le vrai état du code.
+    setFichiers((prev) => ({ ...prev, [chemin]: mod.contenuOriginal }));
+    instanceRef.current?.fs.writeFile(chemin, mod.contenuOriginal).catch(() => {});
+    setModifications((prev) => prev.map((m) => (m.cheminFichier === chemin ? { ...m, statut: "rejete" } : m)));
+    toast.info(`Modification annulée : ${chemin}`);
   }
 
   async function envoyerSurGithub() {
-    if (propositions.length === 0) {
-      toast.error("Aucune proposition validée à envoyer pour le moment.");
+    // MODIFIÉ (point D) : on n'envoie que ce qui a été explicitement accepté
+    const modificationsAcceptees = modifications.filter((m) => m.statut === "accepte");
+    if (modificationsAcceptees.length === 0) {
+      toast.error("Acceptez au moins une modification avant d'envoyer sur GitHub.");
       return;
     }
     setEnvoiEnCours(true);
     try {
       const resultat = await apiFetch(`/bugs/${bugId}/valider-envoyer`, {
         method: "POST",
-        body: JSON.stringify({ propositions }),
+        body: JSON.stringify({
+          propositions: modificationsAcceptees.map((m) => ({
+            cheminFichier: m.cheminFichier,
+            nouveauContenu: m.contenuPropose,
+            explication: m.explication,
+          })),
+        }),
         headers: { "Content-Type": "application/json" },
       });
       setResultatPR({ url: resultat.urlPR, numeroPR: resultat.numeroPR });
@@ -269,8 +367,6 @@ export default function EspaceTravailPage() {
       {/* Barre supérieure */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
         <div className="flex items-center gap-2.5">
-
-
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#12151F]">
             <Sparkles className="h-4 w-4 text-emerald-400" />
           </div>
@@ -296,7 +392,8 @@ export default function EspaceTravailPage() {
           )}
           <Button
             onClick={envoyerSurGithub}
-            disabled={envoiEnCours || propositions.length === 0}
+            // MODIFIÉ : désactivé tant qu'aucune modification n'est "accepte" (plus juste "il existe des propositions")
+            disabled={envoiEnCours || modifications.filter((m) => m.statut === "accepte").length === 0}
             size="sm"
             className="gap-1.5 bg-[#12151F] hover:bg-[#12151F]/90 text-xs sm:text-sm"
           >
@@ -307,13 +404,12 @@ export default function EspaceTravailPage() {
       </div>
 
       {/* Corps redimensionnable */}
+      
       <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        {/* Chat de l'Agent IA (Sidebar escamotable) */}
         {chatOuvert && (
           <>
-            <ResizablePanel defaultSize={150} minSize={150} maxSize={250} id="panel-chat">
+            <ResizablePanel defaultSize={250} minSize={150} maxSize={300} id="panel-chat">
               <div className="flex h-full flex-col bg-slate-50/30">
-                {/* En-tête du Chat avec le bouton de masquage */}
                 <div className="flex items-center justify-between border-b border-slate-100 bg-white px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Bot className="h-4 w-4 text-emerald-600" />
@@ -336,6 +432,37 @@ export default function EspaceTravailPage() {
                 </div>
 
                 <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                  {bug && (
+                    <div className="border-b border-slate-100 bg-white">
+                      <button
+                        onClick={() => setDetailsBugOuverts((v) => !v)}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <AlertCircle className="h-3.5 w-3.5" /> Détails du bug signalé
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${detailsBugOuverts ? "rotate-180" : ""}`} />
+                      </button>
+                      {detailsBugOuverts && (
+                        <div className="px-4 pb-3">
+                          {bug.titre && <p className="mb-1 text-sm font-semibold text-[#12151F]">{bug.titre}</p>}
+                          <p className="mb-2 text-sm text-slate-600">{bug.description}</p>
+                          {bug.captures.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {bug.captures.map((url, i) => (
+                                <a key={i} href={url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-md border border-slate-200">
+                                  <img src={url} alt={`Capture ${i + 1}`} className="h-14 w-20 object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            {bug.captures.length > 0 ? `${bug.captures.length} capture(s) transmise(s) à l'agent` : "Aucune capture jointe"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {messages.map((m, i) => (
                     <BulleMessage key={i} message={m} />
                   ))}
@@ -364,13 +491,12 @@ export default function EspaceTravailPage() {
           </>
         )}
 
-        {/* Zone Code / FileTree / Preview + Terminal */}
         <ResizablePanel defaultSize={chatOuvert ? 80 : 100} id="panel-workspace">
+          {/* MODIFIÉ (point B) */}
           <ResizablePanelGroup orientation="vertical">
             <ResizablePanel defaultSize={70} minSize={35}>
               <div className="flex h-full flex-col">
                 <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2 bg-white">
-                  {/* Bouton pour réouvrir le chat uniquement quand il est masqué */}
                   {!chatOuvert && (
                     <Button
                       variant="ghost"
@@ -379,33 +505,41 @@ export default function EspaceTravailPage() {
                       title="Afficher le chat"
                       className="h-8 w-8 text-slate-600 hover:bg-slate-100 mr-10"
                     >
-                      <PanelLeft className="h-4 w-4" /> <p className="font-bold text-brand-green">chat</p>
+                      <PanelLeft className="h-4 w-4" />
                     </Button>
                   )}
 
                   <OngletBouton actif={vue === "code"} onClick={() => setVue("code")} icone={Code2} label="Code" />
                   <OngletBouton actif={vue === "preview"} onClick={() => setVue("preview")} icone={Eye} label="Preview" />
-                  {/* disabled={!urlPreview} */}
                 </div>
+
+                {/* AJOUT (point D) : le panneau des modifications en attente, juste au-dessus
+                    de la zone code/preview — il se masque tout seul s'il n'y a rien en attente. */}
+                <PanneauModifications
+                  modifications={modifications}
+                  onAccepter={accepterModification}
+                  onRejeter={rejeterModification}
+                  onVoir={(chemin) => { setFichierActif(chemin); setVue("code"); }}
+                />
 
                 <div className="flex flex-1 overflow-hidden">
                   {vue === "code" ? (
+                    // MODIFIÉ (point B)
                     <ResizablePanelGroup orientation="horizontal" className="flex-1">
-                      {/* Arbre de fichiers redimensionnable */}
                       <ResizablePanel defaultSize={150} minSize={150} maxSize={200}>
                         <div className="h-full border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
                           <FileTree
                             fichiers={nomsFichiers}
                             fichierActif={fichierActif}
                             onSelect={setFichierActif}
-                            fichiersModifies={new Set(propositions.map((p) => p.cheminFichier))}
+                            // MODIFIÉ : référence `modifications` au lieu de `propositions`
+                            fichiersModifies={new Set(modifications.map((m) => m.cheminFichier))}
                           />
                         </div>
                       </ResizablePanel>
 
                       <ResizableHandle withHandle />
 
-                      {/* Éditeur de code */}
                       <ResizablePanel defaultSize={100}>
                         <div className="flex h-full flex-col overflow-hidden">
                           {fichierActif && (
@@ -449,7 +583,6 @@ export default function EspaceTravailPage() {
 
             <ResizableHandle withHandle />
 
-            {/* Terminal */}
             <ResizablePanel defaultSize={15} minSize={10}>
               <div className="flex h-full flex-col bg-[#0B0D14]">
                 <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-1.5">
@@ -478,6 +611,44 @@ function OngletBouton({
     >
       <Icone className="h-3.5 w-3.5" /> {label}
     </button>
+  );
+}
+
+// AJOUT (point D) : nouveau composant, défini au même niveau que BulleMessage/OngletBouton
+function PanneauModifications({
+  modifications, onAccepter, onRejeter, onVoir,
+}: {
+  modifications: EtatModification[];
+  onAccepter: (chemin: string) => void;
+  onRejeter: (chemin: string) => void;
+  onVoir: (chemin: string) => void;
+}) {
+  const enAttente = modifications.filter((m) => m.statut === "en_attente");
+  if (enAttente.length === 0) return null;
+
+  return (
+    <div className="border-b border-amber-200 bg-amber-50 px-3 py-2">
+      <p className="mb-1.5 text-xs font-medium text-amber-800">
+        {enAttente.length} modification(s) proposée(s) — à valider
+      </p>
+      <div className="space-y-1.5">
+        {enAttente.map((m) => (
+          <div key={m.cheminFichier} className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs">
+            <button onClick={() => onVoir(m.cheminFichier)} className="min-w-0 flex-1 truncate text-left text-slate-700 hover:underline">
+              {m.cheminFichier}
+            </button>
+            <div className="flex shrink-0 gap-1">
+              <Button size="sm" variant="outline" onClick={() => onRejeter(m.cheminFichier)} className="h-6 gap-1 border-red-200 px-2 text-red-600 hover:bg-red-50">
+                <XCircle className="h-3 w-3" /> Rejeter
+              </Button>
+              <Button size="sm" onClick={() => onAccepter(m.cheminFichier)} className="h-6 gap-1 bg-emerald-600 px-2 hover:bg-emerald-700">
+                <CheckCircle2 className="h-3 w-3" /> Accepter
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

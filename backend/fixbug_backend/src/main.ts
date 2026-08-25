@@ -12,6 +12,10 @@ async function bootstrap() {
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.setGlobalPrefix('api');
+  app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
   const config = new DocumentBuilder()
     .setTitle('Fixbug API')
     .setDescription('Documentation de l\'API Fixbug')

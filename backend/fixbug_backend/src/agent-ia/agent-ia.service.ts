@@ -5,12 +5,12 @@ import { outilsAnalyse, outilConversationTesteur } from './outils';
 export type Proposition = { cheminFichier: string; nouveauContenu: string; explication: string };
 
 const MODELES = [
-  'google/gemma-4-26b-a4b-it:free',
-  'google/gemma-4-31b-it:free',
-  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
-  'nvidia/nemotron-nano-12b-v2-vl:free',
-  'dots-studio/dots-3-note-preview:free',
-  'openai/gpt-oss-20b:free',
+  'stealth/ox-alpha',                          // raisonnement + code + agentique + vision, 1M contexte
+  'thinkingmachines/inkling:free',              // multimodal natif (image/audio) + code + tool-use agentique
+  'nvidia/nemotron-3-super-120b-a12b:free',     // SWE-Bench Verified, TerminalBench — très solide en code
+  'z-ai/glm-5.2:free',                          // long-horizon agent, ingénierie logicielle multi-étapes
+  'poolside/laguna-s-2.1:free',                 // agent de code dédié, 70% Terminal-Bench 2.1
+  'dots-studio/dots-3-note-preview:free',       // celui qui marchait déjà chez toi — gardé en dernier filet
 ];
 
 @Injectable()

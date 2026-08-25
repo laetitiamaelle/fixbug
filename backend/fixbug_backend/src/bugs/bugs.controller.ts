@@ -53,6 +53,14 @@ export class BugsController {
   validerEtEnvoyer(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
     return this.bugsService.validerEtEnvoyer(id, u.id, body.propositions);
   }
+
+  // bugs.controller.ts — AJOUT
+@Get(':id')
+@UseGuards(RolesGuard)
+@Roles('DEVELOPPEUR', 'CHEF_PROJET')
+obtenirBug(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number; role: string }) {
+  return this.bugsService.obtenirBug(id, u);
+}
   // bugs.controller.ts — AJOUT
 @Post('chat-testeur')
 @UseGuards(RolesGuard)

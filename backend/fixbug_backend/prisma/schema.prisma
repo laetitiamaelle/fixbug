@@ -34,6 +34,7 @@ model Utilisateur {
   notifications Notification[]
   bugsDeclares Bug[]
   bugsPrisEnCharge Bug[] @relation("BugsPrisEnCharge")
+  conversations Conversation[]
   @@map("utilisateurs")
 }
 
@@ -49,6 +50,7 @@ model Projet {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   invitations Invitation[]
+  conversations Conversation[]
   bugs Bug[]
   @@map("projets")
 }
@@ -117,4 +119,20 @@ model Bug {
   updatedAt   DateTime  @updatedAt
 
   @@map("bugs")
+}
+
+//CHAT AVEC L'AGENT
+
+model Conversation {
+  id         Int         @id @default(autoincrement())
+  titre      String?     // rempli automatiquement après le premier message (via genererTitre, déjà existant)
+  projetId   Int
+  projet     Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  testeurId  Int
+  testeur    Utilisateur @relation(fields: [testeurId], references: [id])
+  messages   Json        // tableau de { role, contenu, captures?, bugId?, bugTitre?, bugStatut?, createdAt }
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("conversations")
 }

@@ -12,11 +12,12 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { BugsModule } from './bugs/bugs.module';
 import { GithubModule } from './github/github.module';
 import { AgentIaModule } from './agent-ia/agent-ia.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [PrismaModule, UsersModule,ConfigModule.forRoot({
       isGlobal: true,
-    }), MailModule, ProjetsModule, NotificationsModule, CollaborationsModule, CloudinaryModule, BugsModule, GithubModule, AgentIaModule],
+    }), MailModule, ProjetsModule, NotificationsModule, CollaborationsModule, CloudinaryModule, BugsModule, GithubModule, AgentIaModule, ConversationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

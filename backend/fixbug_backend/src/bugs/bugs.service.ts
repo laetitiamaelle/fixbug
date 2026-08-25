@@ -120,22 +120,28 @@ export class BugsService {
     return this.githubService.obtenirArborescenceComplete(bug.projet.liengit);
   }
   // bugs.service.ts — dans demanderAnalyseIA
-  async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDeveloppeur?: string) {
-    const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
-    if (!bug) throw new NotFoundException('Bug introuvable');
-    if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
+  // bugs.service.ts — dans demanderAnalyseIA, remplace l'appel à analyserBug
+async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDeveloppeur?: string) {
+  const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
+  if (!bug) throw new NotFoundException('Bug introuvable');
+  if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
 
-    const contexte = instructionDeveloppeur ? `Bug initial : ${bug.description}\n\nInstruction : ${instructionDeveloppeur}` : bug.description;
-    const { resumeIA, propositions } = await this.agentIaService.analyserBug(bug.projet.liengit, contexte, 'main'); // ← 'main' au lieu de bug.projet.branchePrincipale
+  const contexte = instructionDeveloppeur
+    ? `Bug initial : ${bug.description}\n\nInstruction : ${instructionDeveloppeur}`
+    : bug.description;
 
-    return this.prisma.bug.update({
-      where: { id: bugId },
-      data: {
-        proposition: JSON.stringify({ resumeIA, propositions }),
-        statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE',
-      },
-    });
-  }
+  const { resumeIA, propositions } = await this.agentIaService.analyserBug(
+    bug.projet.liengit,
+    contexte,
+    'main',
+    bug.captures, // NOUVEAU — les URLs Cloudinary transmises au modèle multimodal
+  );
+
+  return this.prisma.bug.update({
+    where: { id: bugId },
+    data: { proposition: JSON.stringify({ resumeIA, propositions }), statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE' },
+  });
+}
 
   async validerEtEnvoyer(bugId: number, developpeurId: number, propositions: Proposition[]) {
     const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
@@ -149,6 +155,24 @@ export class BugsService {
     await this.notificationsService.creerNotifications(bug.projet.chefProjetId, 'Pull Request créée', `PR #${pr.numero} créée pour le bug #${bug.id}`);
     return bugMisAJour;
   }
+
+  // bugs.service.ts — AJOUT
+async obtenirBug(bugId: number, utilisateur: { id: number; role: string }) {
+  const bug = await this.prisma.bug.findUnique({
+    where: { id: bugId },
+    include: { projet: true, testeur: { select: { nom: true, prenom: true } } },
+  });
+  if (!bug) throw new NotFoundException('Bug introuvable');
+
+  // Seul le développeur ASSIGNÉ à ce bug, ou le chef de projet PROPRIÉTAIRE du projet, peut y accéder
+  const estDeveloppeurAssigne = utilisateur.role === 'DEVELOPPEUR' && bug.developpeurId === utilisateur.id;
+  const estChefDuProjet = utilisateur.role === 'CHEF_PROJET' && bug.projet.chefProjetId === utilisateur.id;
+  if (!estDeveloppeurAssigne && !estChefDuProjet) {
+    throw new ForbiddenException("Vous n'avez pas accès à ce bug");
+  }
+
+  return bug;
+}
 
   // bugs.service.ts — NOUVELLE méthode, orchestre la conversation + création réelle du bug
 async discuterEtDeclarer(
