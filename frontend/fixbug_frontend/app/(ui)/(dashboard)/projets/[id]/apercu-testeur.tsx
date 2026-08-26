@@ -158,13 +158,14 @@ export default function ApercuTesteur() {
   }
 
   return (
-    <div className="grid h-[calc(100vh-190px)] grid-cols-1 gap-4 md:grid-cols-[260px_1fr]">
-      {/* Sidebar des conversations — désormais bien sa propre colonne */}
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-3">
-          <Button onClick={nouvelleConversation} size="sm" className="w-full justify-start gap-2 bg-[#12151F] hover:bg-[#12151F]/90">
-            <Plus className="h-4 w-4" /> Nouveau chat
+    <div className="grid h-[calc(100vh-140px)] grid-cols-1 gap-3 md:grid-cols-[280px_1fr]">
+      {/* Sidebar ChatGPT-like — historique */}
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-[#F9FAFB] shadow-sm">
+        <div className="border-b border-slate-200 bg-white p-3">
+          <Button onClick={nouvelleConversation} size="sm" className="w-full justify-center gap-2 bg-[#12151F] hover:bg-[#12151F]/90 shadow-sm">
+            <Plus className="h-4 w-4" /> Nouveau signalement
           </Button>
+          <p className="mt-2 text-[11px] text-center text-slate-400">Chat contextuel du projet</p>
         </div>
         <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-1 p-2">
@@ -184,13 +185,15 @@ export default function ApercuTesteur() {
                   <button
                     key={conv.id}
                     onClick={() => ouvrirConversation(conv.id)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${actif ? " text-black" : "text-slate-900 hover:bg-slate-500"
+                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-all ${actif ? "bg-[#12151F] text-white shadow-sm" : "text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200"
                       }`}
                   >
-
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${actif ? "bg-white/10" : "bg-slate-200"}`}>
+                      <MessageSquare className={`h-3.5 w-3.5 ${actif ? "text-white" : "text-slate-500"}`} />
+                    </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{conv.titre || "Nouvelle conversation"}</span>
-                      <span className={`block text-xs ${actif ? "text-white/50" : "text-slate-400"}`}>{formatDateCourte(conv.updatedAt)}</span>
+                      <span className="block truncate text-[13px] font-medium">{conv.titre || "Nouvelle conversation"}</span>
+                      <span className={`block text-xs ${actif ? "text-white/60" : "text-slate-400"}`}>{formatDateCourte(conv.updatedAt)}</span>
                     </span>
                   </button>
                 );
@@ -200,10 +203,23 @@ export default function ApercuTesteur() {
         </ScrollArea>
       </div>
 
-      {/* Zone de chat */}
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="flex flex-col gap-4 p-5">
+      {/* Zone de chat — style ChatGPT */}
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        {/* Header chat */}
+        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white"><Bug className="h-4 w-4" /></div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Assistant FixBug</p>
+              <p className="text-xs text-slate-500">Signalez un bug par message, avec captures si besoin</p>
+            </div>
+          </div>
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> En ligne
+          </span>
+        </div>
+        <ScrollArea className="min-h-0 flex-1 bg-[#FCFCF9]">
+          <div className="flex flex-col gap-4 p-4 sm:p-5 max-w-3xl mx-auto w-full">
             {conversationActiveId === null && messages.length === 0 && !chargementConversation ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 py-16 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#12151F]">

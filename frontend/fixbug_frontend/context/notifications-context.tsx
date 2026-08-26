@@ -11,6 +11,7 @@ type NotificationsContextType = {
   nonLues: number;
   rafraichir: () => Promise<void>;
   marquerToutesLues: () => Promise<void>;
+  marquerLue: (id: number) => Promise<void>;
   supprimer: (id: number) => Promise<void>;
 };
 
@@ -34,8 +35,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   async function marquerToutesLues() {
     await apiFetch("/notifications/tout-marquer-lu", { method: "PATCH" });
-    // NOUVEAU : met à jour l'état local IMMÉDIATEMENT (pas besoin de refetch)
     setNotifications((prev) => prev?.map((n) => ({ ...n, lue: true })) ?? null);
+  }
+
+  async function marquerLue(id: number) {
+    await apiFetch(`/notifications/${id}/lue`, { method: "PATCH" });
+    setNotifications((prev) => prev?.map((n) => n.id === id ? { ...n, lue: true } : n) ?? null);
   }
 
   async function supprimer(id: number) {
@@ -46,7 +51,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const nonLues = notifications?.filter((n) => !n.lue).length ?? 0;
 
   return (
-    <NotificationsContext.Provider value={{ notifications, nonLues, rafraichir, marquerToutesLues, supprimer }}>
+    <NotificationsContext.Provider value={{ notifications, nonLues, rafraichir, marquerToutesLues, marquerLue, supprimer }}>
       {children}
     </NotificationsContext.Provider>
   );

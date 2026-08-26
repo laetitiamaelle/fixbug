@@ -1,3 +1,16 @@
+/**
+ * Espace de travail Développeur — FixBug
+ * ------------------------------------------------------------
+ * Interface moderne et professionnelle pour corriger un bug avec l'IA.
+ * - WebContainer : environnement isolé (preview + terminal)
+ * - Monaco Editor : édition du code
+ * - Chat IA : demander une analyse / correction
+ * - Panneau Modifications : accepter/rejeter chaque fichier proposé
+ * - Création PR : envoi sur GitHub après validation
+ *
+ * Toutes les propositions de l'IA sont en attente jusqu'à validation humaine.
+ * Aucune PR n'est créée sans acceptation explicite.
+ */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -73,6 +86,8 @@ export default function EspaceTravailPage() {
   const [resultatPR, setResultatPR] = useState<ResultatPR>(null);
   const finChatRef = useRef<HTMLDivElement>(null);
 
+   const cleCache = `fixbug-workspace-${bugId}`;
+   
   useEffect(() => {
     finChatRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, enReflexion]);
@@ -363,9 +378,9 @@ export default function EspaceTravailPage() {
   const nomsFichiers = Object.keys(fichiers);
 
   return (
-    <div className="flex h-[calc(100vh-80px)] flex-col gap-3 p-2 sm:p-4">
-      {/* Barre supérieure */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+    <div className="flex h-[calc(100vh-80px)] flex-col gap-3 p-2 sm:p-4 bg-slate-50/30">
+      {/* Barre supérieure — moderne, sticky, glass effect */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-xl px-4 py-2.5 shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#12151F]">
             <Sparkles className="h-4 w-4 text-emerald-400" />

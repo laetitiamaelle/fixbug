@@ -14,7 +14,6 @@ const navChefProjet = [
   { href: "/chef_projet", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/projets", label: "Projets", icon: FolderKanban },
   { href: "/bugs", label: "Suivi des bugs", icon: Bug },
-   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profil", label: "Profil", icon: UserPen },
 ];
 
@@ -22,18 +21,15 @@ const navChefProjet = [
 const navTesteur = [
   { href: "/projets", label: "Projets", icon: FolderKanban },
   { href: "/invitations", label: "Invitations", icon: Mail },
-  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profil", label: "Profil", icon: UserPen },
 ];
 const navDeveloppeur = [
   { href: "/projets", label: "Projets", icon: FolderKanban },
   { href: "/invitations", label: "Invitations", icon: Mail },
-   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profil", label: "Profil", icon: UserPen },
 ];
 const navAdmin = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profil", label: "Profil", icon: UserPen },
 ];
 

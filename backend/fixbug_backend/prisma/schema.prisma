@@ -115,6 +115,7 @@ model Bug {
   proposition    String?
   numeroPR       Int?     
   urlPR          String?  
+  messagesDeveloppeur Json? 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

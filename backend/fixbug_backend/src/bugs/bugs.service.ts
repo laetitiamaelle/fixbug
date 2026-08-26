@@ -126,20 +126,24 @@ async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDevelop
   if (!bug) throw new NotFoundException('Bug introuvable');
   if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
 
-  const contexte = instructionDeveloppeur
-    ? `Bug initial : ${bug.description}\n\nInstruction : ${instructionDeveloppeur}`
-    : bug.description;
+  const contexte = instructionDeveloppeur ? `Bug initial : ${bug.description}\n\nInstruction : ${instructionDeveloppeur}` : bug.description;
+  const { resumeIA, propositions } = await this.agentIaService.analyserBug(bug.projet.liengit, contexte, 'main', bug.captures);
 
-  const { resumeIA, propositions } = await this.agentIaService.analyserBug(
-    bug.projet.liengit,
-    contexte,
-    'main',
-    bug.captures, // NOUVEAU — les URLs Cloudinary transmises au modèle multimodal
-  );
+  // NOUVEAU : on ajoute ce tour à l'historique existant, au lieu de l'écraser
+  const historiqueActuel = (bug.messagesDeveloppeur as any[]) ?? [];
+  const nouvelHistorique = [
+    ...historiqueActuel,
+    ...(instructionDeveloppeur ? [{ role: 'user', contenu: instructionDeveloppeur }] : []),
+    { role: 'assistant', contenu: resumeIA, propositions },
+  ];
 
   return this.prisma.bug.update({
     where: { id: bugId },
-    data: { proposition: JSON.stringify({ resumeIA, propositions }), statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE' },
+    data: {
+      proposition: JSON.stringify({ resumeIA, propositions }),
+      messagesDeveloppeur: nouvelHistorique, // NOUVEAU
+      statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE',
+    },
   });
 }
 

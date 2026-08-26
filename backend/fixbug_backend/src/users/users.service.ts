@@ -266,6 +266,7 @@ async obtenirStatistiques() {
     this.prisma.utilisateur.count({ where: { ...filtreRoles, actif: false } }),
     this.prisma.utilisateur.count({ where: { role: 'TESTEUR' } }),
     this.prisma.utilisateur.count({ where: { role: 'CHEF_PROJET' } }),
+    this.prisma.utilisateur.count({ where: { role: 'DEVELOPPEUR' } }),
   ]);
 
   return { total, actifs, desactives, testeurs, chefsProjet };
