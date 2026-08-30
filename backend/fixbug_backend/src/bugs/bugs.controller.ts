@@ -74,4 +74,18 @@ discuterEtDeclarer(
   const historique = body.historique ? JSON.parse(body.historique) : [];
   return this.bugsService.discuterEtDeclarer(u.id, Number(body.projetId), body.message, historique, fichiers);
 }
+
+@Post(':id/pousser-github')
+@UseGuards(RolesGuard)
+@Roles('DEVELOPPEUR')
+pousserSurGithub(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
+  return this.bugsService.pousserSurGithub(id, u.id, body.propositions);
+}
+
+@Post(':id/creer-pull-request')
+@UseGuards(RolesGuard)
+@Roles('DEVELOPPEUR')
+creerPullRequest(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
+  return this.bugsService.creerPullRequest(id, u.id);
+}
 }

@@ -116,6 +116,7 @@ model Bug {
   numeroPR       Int?     
   urlPR          String?  
   messagesDeveloppeur Json? 
+  branchePoussee String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

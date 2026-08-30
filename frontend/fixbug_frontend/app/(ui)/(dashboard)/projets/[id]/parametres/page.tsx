@@ -158,19 +158,10 @@ export default function ParametresProjetPage() {
       </form>
 
       <div className="space-y-4 rounded-xl border border-red-200 bg-red-50/50 p-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
-            <AlertTriangle className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-red-900">Zone de danger</h3>
-            <p className="text-sm text-red-700/80">Supprimer définitivement ce projet et toutes ses données associées.</p>
-          </div>
-        </div>
-
+        
         <AlertDialog>
           <AlertDialogTrigger render={<Button variant="outline" className="border-red-300 bg-white text-red-700 hover:bg-red-100" />}>
-            Supprimer le projet
+            <AlertTriangle className="h-4 w-4" /> Supprimer le projet
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

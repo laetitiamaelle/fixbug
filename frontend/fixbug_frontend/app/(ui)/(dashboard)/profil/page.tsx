@@ -24,6 +24,11 @@ const ROLE_META: Record<string, { label: string; badge: string; ring: string }> 
     badge: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
     ring: "from-sky-500 to-sky-700",
   },
+  DEVELOPPEUR:{
+    label: "Developpeur",
+    badge: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+    ring: "from-sky-500 to-sky-700",
+  },
   CHEF_PROJET: {
     label: "Chef de projet",
     badge: "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",

@@ -128,13 +128,13 @@ export default function ConnexionPage() {
                                     {loading ? (<><Loader2 className="h-4 w-4 animate-spin" /><span>Connexion en cours...</span></>) : ("Se connecter")}
                                 </Button>
                                 <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 border border-slate-100">
-                                    <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" /><span className="text-xs leading-relaxed text-slate-600">Connexion sécurisée et chiffrée</span>
+
                                 </div>
                             </form>
                             <p className="mt-5 text-center text-[13.5px] text-slate-500">Pas encore de compte ? <Link href="/inscription" className="font-semibold text-[#0B0E17] hover:text-emerald-700 underline-offset-4 hover:underline">Inscrivez-vous</Link></p>
                             <p className="mt-2 text-center text-xs text-slate-400">Besoin d'aide ? <Link href="/support" className="font-medium underline hover:text-slate-600">Contacter le support</Link></p>
                         </div>
-                        <p className="mt-4 text-center text-xs text-slate-400">© 2026 FixBug • Tous droits réservés</p>
+            
                     </div>
                 </div>
             </div>

@@ -52,22 +52,78 @@ export class BugsService {
   }
 
   async listerBugs(utilisateur: { id: number; role: string }, projetId?: number) {
-    const filtreProjet =
-      utilisateur.role === 'CHEF_PROJET'
-        ? { chefProjetId: utilisateur.id }
-        : { collaborateurs: { some: { utilisateurId: utilisateur.id } } };
+  let where: any;
 
-    return this.prisma.bug.findMany({
-      where: { projet: filtreProjet, ...(projetId ? { projetId } : {}) },
-      include: {
-        testeur: { select: { id: true, nom: true, prenom: true } },
-        developpeur: { select: { id: true, nom: true, prenom: true } },
-        projet: { select: { nom: true } }
+  if (utilisateur.role === 'CHEF_PROJET') {
+    where = {
+      projet: {
+        chefProjetId: utilisateur.id,
       },
-      orderBy: { createdAt: 'asc' },
-    });
+    };
+  } else if (utilisateur.role === 'DEVELOPPEUR') {
+    where = {
+      OR: [
+        // Bugs des projets auxquels le développeur collabore
+        {
+          projet: {
+            collaborateurs: {
+              some: {
+                utilisateurId: utilisateur.id,
+              },
+            },
+          },
+        },
+
+        // Bugs déjà pris en charge par ce développeur
+        {
+          developpeurId: utilisateur.id,
+        },
+      ],
+    };
+  } else {
+    where = {
+      projet: {
+        collaborateurs: {
+          some: {
+            utilisateurId: utilisateur.id,
+          },
+        },
+      },
+    };
   }
 
+  if (projetId) {
+    where.projetId = projetId;
+  }
+
+  return this.prisma.bug.findMany({
+    where,
+    include: {
+      testeur: {
+        select: {
+          id: true,
+          nom: true,
+          prenom: true,
+        },
+      },
+      developpeur: {
+        select: {
+          id: true,
+          nom: true,
+          prenom: true,
+        },
+      },
+      projet: {
+        select: {
+          nom: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
+}
   //---------------------prendre en charge un bug------------------------------------
 
   async prendreEnCharge(bugId: number, developpeurId: number) {
@@ -218,6 +274,40 @@ async discuterEtDeclarer(
 
   // Simple réponse conversationnelle, rien n'est enregistré
   return { type: 'message' as const, contenu: resultat.contenu };
+}
+
+async pousserSurGithub(bugId: number, developpeurId: number, propositions: Proposition[]) {
+  const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
+  if (!bug) throw new NotFoundException('Bug introuvable');
+  if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
+  if (propositions.length === 0) throw new BadRequestException('Aucune modification acceptée à pousser');
+
+  const nomBranche = `fix/bug-${bug.id}`;
+  await this.agentIaService.pousserSurGithub(bug.projet.liengit, nomBranche, propositions);
+
+  return this.prisma.bug.update({ where: { id: bugId }, data: { branchePoussee: nomBranche } });
+}
+
+async creerPullRequest(bugId: number, developpeurId: number) {
+  const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
+  if (!bug) throw new NotFoundException('Bug introuvable');
+  if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
+  // NOUVEAU : la vraie contrainte demandée — pas de PR sans push préalable
+  if (!bug.branchePoussee) throw new BadRequestException("Vous devez d'abord pousser vos modifications sur GitHub");
+
+  const pr = await this.agentIaService.creerPullRequest(
+    bug.projet.liengit,
+    bug.branchePoussee,
+    `Fix bug #${bug.id} : ${bug.titre ?? ''}`,
+    bug.description,
+  );
+
+  const bugMisAJour = await this.prisma.bug.update({
+    where: { id: bugId },
+    data: { statut: 'RESOLU', numeroPR: pr.numero, urlPR: pr.url },
+  });
+  await this.notificationsService.creerNotifications(bug.projet.chefProjetId, 'Pull Request créée', `PR #${pr.numero} créée pour le bug #${bug.id}`);
+  return bugMisAJour;
 }
 }
 

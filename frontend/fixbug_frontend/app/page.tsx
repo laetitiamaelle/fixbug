@@ -61,17 +61,17 @@ export default function FixbugLanding() {
   ];
 
   const roles: Role[] = [
-    { icon: Camera, title: "Testeur", desc: "Signale un bug avec description et captures d'écran. Aucun accès au code, aucun compte GitHub requis." },
+    { icon: Camera, title: "Testeur", desc: "Signale un bug avec description et captures d'écran. Aucun accès au code" },
     { icon: Bot, title: "Développeur", desc: "Prend en charge le bug, sollicite l'agent IA, examine sa proposition puis la valide avant tout envoi sur le dépôt." },
-    { icon: ClipboardList, title: "Chef de projet", desc: "Pilote le projet, gère les collaborateurs et suit la livrabilité globale — sans intervenir techniquement sur le code." },
+    { icon: ClipboardList, title: "Chef de projet", desc: "Pilote le projet, gère les collaborateurs et suit la livrabilité globale , sans intervenir techniquement sur le code." },
   ];
 
   const features: Feature[] = [
-    { icon: FolderGit2, title: "Projets connectés à GitHub", desc: "Connexion OAuth GitHub pour les chefs de projet et développeurs, dépôt et branche principale associés à chaque projet." },
+    { icon: FolderGit2, title: "Projets connectés à GitHub", desc: "dépôt associés à chaque projet." },
     { icon: Camera, title: "Signalement en un clic", desc: "Les testeurs décrivent l'anomalie et joignent une ou plusieurs captures d'écran, sans jamais toucher au code." },
     { icon: Bot, title: "Agent IA sur demande", desc: "L'IA n'agit jamais seule : elle n'intervient qu'à la demande explicite d'un développeur, sur une tâche précise." },
-    { icon: UserCheck, title: "Validation humaine obligatoire", desc: "Le développeur examine la proposition de l'IA (fichiers, diff) et la valide ou la rejette avant tout envoi sur GitHub." },
-    { icon: GitPullRequest, title: "Pull Request après validation", desc: "Une fois validée, l'agent crée la branche, commit, pousse les changements et ouvre la Pull Request." },
+    { icon: UserCheck, title: "Validation humaine obligatoire", desc: "Le développeur examine la proposition de l'IA  et la valide ou la rejette avant tout envoi sur GitHub." },
+    { icon: GitPullRequest, title: "Pull Request après validation", desc: "Une fois validée, le developpeur pousse les changements et ouvre la Pull Request." },
     { icon: BarChart3, title: "Suivi de livrabilité", desc: "Le chef de projet suit en temps réel l'état des bugs et la livrabilité globale de chaque projet." },
   ];
 
@@ -80,7 +80,7 @@ export default function FixbugLanding() {
     { n: "02", title: "Prendre en charge", desc: "Un développeur prend le bug en charge sur son projet." },
     { n: "03", title: "Analyser", desc: "Il sollicite l'agent IA, qui explore le dépôt et propose une correction." },
     { n: "04", title: "Valider", desc: "Le développeur examine la proposition et la valide, ou en redemande une." },
-    { n: "05", title: "Pull Request créée", desc: "L'agent commit, pousse les changements et ouvre la Pull Request." },
+    { n: "05", title: "Pull Request créée", desc: "le developpeur, pousse les changements et ouvre la Pull Request." },
   ];
 
   return (
@@ -135,85 +135,48 @@ export default function FixbugLanding() {
         <div className="pointer-events-none absolute -top-32 left-[10%] h-[320px] w-[320px] sm:h-[480px] sm:w-[480px] rounded-full bg-emerald-500/[0.07] blur-[60px] sm:blur-[70px]" />
         <div className="pointer-events-none absolute -top-20 right-[5%] h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] rounded-full bg-violet-500/[0.05] blur-[50px] sm:blur-[70px]" />
         <div className="pointer-events-none absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-slate-200/40 blur-[50px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,#000_70%,transparent_110%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,#000_70%,transparent_110%)]" />
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
           <div className="w-full min-w-0">
             <div className="reveal inline-flex max-w-full flex-wrap items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
               <span className="relative flex h-2 w-2 shrink-0"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
-              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-slate-600">IA supervisée par un développeur</span>
-              <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">nouveau</span>
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-slate-600"></span>
+              
             </div>
 
             <h1 className="reveal d1 mt-6 max-w-[600px] text-[30px] font-[720] leading-[0.95] tracking-[-0.03em] text-[#0B0E17] sm:text-[42px] lg:text-[48px] xl:text-[52px]">
-              Un bug signalé.<br />Une correction<br /><span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">validée par un humain</span>.
+              Un bug signalé<br />Une correction<br /><span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">validée par un humain</span>
             </h1>
 
             <p className="reveal d2 mt-5 max-w-[540px] text-[15px] leading-[1.7] text-slate-600 sm:text-[16px]">
-              Un testeur signale, un développeur sollicite l’agent IA et examine sa proposition, puis la valide. Ce n’est qu’à ce moment que la Pull Request est ouverte sur GitHub — le contrôle reste humain à chaque étape sensible.
+              Un testeur signale, un développeur sollicite l’agent IA et examine sa proposition, puis la valide. Ce n’est qu’à ce moment que la Pull Request est ouverte sur GitHub ,le contrôle reste humain à chaque étape sensible.
             </p>
 
             <div className="reveal d3 mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/inscription" className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#0B0E17] px-6 py-[13px] text-[14px] font-[600] tracking-[-0.01em] text-white shadow-[0_4px_16px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] transition-all hover:bg-[#151a2a] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] hover:-translate-y-px active:translate-y-0">Créer un compte gratuit <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></Link>
+              <Link href="/inscription" className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#0B0E17] px-6 py-[13px] text-[14px] font-[600] tracking-[-0.01em] text-white shadow-[0_4px_16px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] transition-all hover:bg-[#151a2a] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] hover:-translate-y-px active:translate-y-0">Créer un compte <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></Link>
               <a href="#comment-ca-marche" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-6 py-[13px] text-[14px] font-[600] tracking-[-0.01em] text-[#0B0E17] shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 hover:shadow">Voir comment ça marche</a>
-            </div>
-
-            <div className="reveal d4 mt-6 flex flex-wrap items-center gap-2.5 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm"><IconeGithub className="h-3.5 w-3.5" /><span className="font-medium">OAuth GitHub</span></span>
-              <span className="hidden items-center gap-1.5 sm:inline-flex"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Aucun envoi sans validation</span>
             </div>
           </div>
 
-          <div className="reveal d2 relative w-full min-w-0 lg:pl-4">
-            <div className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.22),0_8px_24px_-8px_rgba(15,23,42,0.12)]">
+          <div className="reveal  animate-float-delayed d2 relative  w-full min-w-0 lg:pl-4">
+            <div className="relative overflow-hidden  rounded-[20px] sm:rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.22),0_8px_24px_-8px_rgba(15,23,42,0.12)]">
               <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50/70 px-3 sm:px-4 py-3">
                 <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-400" />
                 <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-yellow-400" />
                 <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-400" />
-                <span className="ml-2 sm:ml-3 flex-1 truncate rounded-full bg-white px-2 sm:px-3 py-1 text-center font-mono text-[10px] sm:text-[11px] text-slate-400 border border-slate-200">fixbug.app • PR #42 • validation requise</span>
               </div>
-              <div className="relative h-[280px] sm:h-[360px] w-full overflow-hidden bg-slate-900">
+              <div className="relative  h-[280px] sm:h-[360px] w-full overflow-hidden bg-slate-900">
                 <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1200&auto=format&fit=crop" alt="Développeur analysant une proposition de correction" className="h-full w-full object-cover opacity-90" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/10 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-white/15 bg-white/95 p-2.5 sm:p-3 shadow-xl backdrop-blur">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                    <span className="text-xs font-semibold tracking-tight text-slate-900">Proposition IA • 3 fichiers modifiés</span>
-                    <span className="w-fit rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">En attente de validation</span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-3 gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] leading-relaxed">
-                    <div className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-700 text-center">+ 42 lignes</div>
-                    <div className="rounded-lg bg-red-50 px-2 py-1.5 text-red-700 text-center">− 18 lignes</div>
-                    <div className="rounded-lg bg-slate-100 px-2 py-1.5 text-slate-600 text-center">3 diffs</div>
-                  </div>
-                </div>
+                
               </div>
             </div>
-            <div className="animate-float-delayed absolute -bottom-4 left-2 hidden items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 pr-4 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.18)] lg:flex max-w-[85%]">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-sm"><Check className="h-5 w-5" strokeWidth={3} /></span>
-              <div className="min-w-0"><p className="text-[13px] font-semibold leading-none tracking-tight text-slate-900 truncate">Validé par le développeur</p><p className="text-xs text-slate-500 truncate">Prêt à créer la Pull Request</p></div>
-            </div>
+            
             <div className="animate-float absolute -top-3 right-2 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-lg lg:flex"><Bot className="h-3.5 w-3.5 text-violet-600" /><span className="text-xs font-medium text-slate-700">Agent IA • en attente</span></div>
           </div>
         </div>
       </section>
-
-      {/* BANDE OUTILS */}
-      <section className="border-y border-slate-100 bg-slate-50/60 py-7">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="text-center font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">S’intègre à votre stack moderne</p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-            {[
-              { icon: IconeGithub, label: "GitHub (OAuth + Octokit)" },
-              { icon: Code2, label: "React / Next.js / NestJS" },
-              { icon: Database, label: "PostgreSQL" },
-              { icon: Sparkles, label: "OpenRouter" },
-            ].map((item) => (
-              <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 shadow-sm"><item.icon className="h-4 w-4 text-slate-500 shrink-0" />{item.label}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* LES RÔLES */}
       <section id="roles" className="bg-white py-14 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -297,13 +260,13 @@ export default function FixbugLanding() {
         <div className="pointer-events-none absolute -top-24 left-1/2 h-80 w-full max-w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[70px]" />
         <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-violet-500/10 blur-[60px]" />
         <div className="reveal relative mx-auto max-w-3xl px-4 sm:px-6 text-center">
-          <h2 className="text-2xl font-[700] leading-[1.15] tracking-[-0.025em] text-white sm:text-3xl lg:text-[36px]">Prêt à corriger vos bugs sans perdre le contrôle ?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-slate-400">Créez votre projet, connectez votre dépôt GitHub et laissez vos développeurs superviser l’IA à chaque étape.</p>
+          <h2 className="text-2xl font-[700] leading-[1.15] tracking-[-0.025em] text-white sm:text-3xl lg:text-[36px]">Prêt à corriger vos bugs </h2>
+          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-slate-400">Créez votre projet, laissez vos développeurs superviser l’IA à chaque étape.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/inscription" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 text-[14px] font-[650] tracking-[-0.01em] text-[#0B0E17] shadow-lg transition-all hover:bg-slate-100">Créer un compte gratuit <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/inscription" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 text-[14px] font-[650] tracking-[-0.01em] text-[#0B0E17] shadow-lg transition-all hover:bg-slate-100">Créer un compte  <ArrowRight className="h-4 w-4" /></Link>
             <Link href="/connexion" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-6 py-3.5 text-[14px] font-[600] tracking-[-0.01em] text-white backdrop-blur transition-colors hover:bg-white/10 hover:border-white/20">Se connecter</Link>
           </div>
-          <p className="mt-6 text-xs text-slate-500">Gratuit • Sans carte bancaire • Configuration en 2 minutes</p>
+         
         </div>
       </section>
 

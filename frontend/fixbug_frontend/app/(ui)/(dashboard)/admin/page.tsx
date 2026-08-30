@@ -123,15 +123,20 @@ export default function UtilisateursAdminPage() {
   );
 
   return (
-    <div>
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-ink">Utilisateurs</h1>
-          <p className="text-sm text-slate-500">Gérez les comptes de la plateforme.</p>
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12151F] text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#12151F]">Utilisateurs</h1>
+            <p className="text-sm text-slate-500">Gérez les comptes de la plateforme et suivez leur activité.</p>
+          </div>
         </div>
         <DialogNouvelUtilisateur ouvert={dialogOuvert} onOuvertChange={setDialogOuvert} onCree={chargerUtilisateurs} />
       </div>
-<div><StatsCards stats={stats} chargement={statsChargement} /></div>
+ <div className="mb-6"><StatsCards stats={stats} chargement={statsChargement} /></div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative max-w-sm flex-1 min-w-55">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

@@ -4,13 +4,22 @@ import { outilsAnalyse, outilConversationTesteur } from './outils';
 
 export type Proposition = { cheminFichier: string; nouveauContenu: string; explication: string };
 
-const MODELES = [
-  'stealth/ox-alpha',                          // raisonnement + code + agentique + vision, 1M contexte
-  'thinkingmachines/inkling:free',              // multimodal natif (image/audio) + code + tool-use agentique
-  'nvidia/nemotron-3-super-120b-a12b:free',     // SWE-Bench Verified, TerminalBench — très solide en code
-  'z-ai/glm-5.2:free',                          // long-horizon agent, ingénierie logicielle multi-étapes
-  'poolside/laguna-s-2.1:free',                 // agent de code dédié, 70% Terminal-Bench 2.1
-  'dots-studio/dots-3-note-preview:free',       // celui qui marchait déjà chez toi — gardé en dernier filet
+// agent-ia.service.ts
+
+// Modèles à essayer en priorité QUAND il y a des images à analyser
+const MODELES_VISION = [
+  'google/gemma-4-31b-it:free',        // vision confirmée, 262K contexte
+  'nvidia/nemotron-nano-12b-v2-vl:free', // "VL" = vision-language, dédié à ça
+  'dots-studio/dots-3-note-preview:free', // celui qui répondait déjà chez toi
+];
+
+// Modèles texte seul — utilisés quand pas d'image, ET en dernier recours si TOUS les modèles vision échouent
+const MODELES_TEXTE = [
+  'openai/gpt-oss-20b:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'z-ai/glm-5.2:free',
+  'poolside/laguna-s-2.1:free',
+  'dots-studio/dots-3-note-preview:free',
 ];
 
 @Injectable()
@@ -32,23 +41,23 @@ export class AgentIaService {
     return donnees.choices[0].message;
   }
 
-  // --- Boucle de fallback : essaie chaque modèle de la liste jusqu'à ce qu'un réponde ---
-  // SEULE méthode de ce type dans le fichier maintenant — utilisée par les 3 usages
-  // (analyse développeur, chat testeur, génération de titre), chacun avec ses propres outils.
-  private async appelerModeleAvecOutils(messages: any[], outils: any[] | null) {
-    let derniereErreur: Error | null = null;
-    for (const model of MODELES) {
-      try {
-        const message = await this.appelerUnModele(model, messages, outils);
-        this.logger.log(`Réponse obtenue via ${model}`);
-        return message;
-      } catch (e: any) {
-        this.logger.warn(`Échec avec ${model} : ${e.message} — tentative suivante`);
-        derniereErreur = e;
-      }
+  
+  private async appelerModeleAvecOutils(messages: any[], outils: any[] | null, aDesImages = false) {
+  const listeAEssayer = aDesImages ? [...MODELES_VISION, ...MODELES_TEXTE] : MODELES_TEXTE;
+  let derniereErreur: Error | null = null;
+
+  for (const model of listeAEssayer) {
+    try {
+      const message = await this.appelerUnModele(model, messages, outils);
+      this.logger.log(`Réponse obtenue via ${model}`);
+      return message;
+    } catch (e: any) {
+      this.logger.warn(`Échec avec ${model} : ${e.message} — tentative suivante`);
+      derniereErreur = e;
     }
-    throw new BadRequestException(`Tous les modèles ont échoué. Dernière erreur : ${derniereErreur?.message}`);
   }
+  throw new BadRequestException(`Tous les modèles ont échoué. Dernière erreur : ${derniereErreur?.message}`);
+}
 
   // --- Génération automatique du titre (aucun outil nécessaire, juste du texte) ---
   async genererTitre(description: string): Promise<string> {
@@ -121,6 +130,7 @@ export class AgentIaService {
     }
     return { resumeIA: "Je n'ai pas réussi à aboutir à une correction claire pour cette demande.", propositions: [] };
   }
+  
 
   // --- Envoi réel sur GitHub, après validation du développeur (aucun appel IA ici) ---
   async envoyerSurGithub(lienGithub: string, nomBranche: string, propositions: Proposition[], titrePR: string, descriptionPR: string) {
@@ -163,4 +173,18 @@ export class AgentIaService {
 
     return { type: 'message' as const, contenu: messageAssistant.content ?? "D'accord." };
   }
+
+  // agent-ia.service.ts — remplace envoyerSurGithub par ces deux méthodes
+async pousserSurGithub(lienGithub: string, nomBranche: string, propositions: Proposition[]) {
+  await this.githubService.creerBranche(lienGithub, nomBranche);
+  for (const p of propositions) {
+    const { sha } = await this.githubService.lireFichier(lienGithub, p.cheminFichier);
+    await this.githubService.modifierFichier(lienGithub, p.cheminFichier, p.nouveauContenu, nomBranche, sha);
+  }
+  return { nomBranche };
+}
+
+async creerPullRequest(lienGithub: string, nomBranche: string, titrePR: string, descriptionPR: string) {
+  return this.githubService.ouvrirPullRequest(lienGithub, nomBranche, titrePR, descriptionPR);
+}
 }

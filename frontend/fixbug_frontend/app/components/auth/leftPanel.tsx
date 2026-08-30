@@ -19,10 +19,7 @@ export function LeftPanel({ headline, description }: LeftPanelProps) {
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           Retour à l’accueil
         </Link>
-        <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          FixBug • IA supervisée
-        </span>
+        
       </div>
 
       <div className="relative flex flex-1 min-h-0 flex-col justify-center py-6 lg:py-8">

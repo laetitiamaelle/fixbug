@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AlertCircle, Clock, CheckCircle2, XCircle, UserCheck, ArrowRight, ChevronDown, ExternalLink } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle2, XCircle, UserCheck, ArrowRight, ChevronDown, ExternalLink, Search, Filter, Bug, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type BugItem = {
   id: number;
@@ -38,6 +41,8 @@ export default function TousLesBugsPage() {
   const [bugs, setBugs] = useState<BugItem[] | null>(null);
   const [enCours, setEnCours] = useState<number | null>(null);
   const [bugDeplie, setBugDeplie] = useState<number | null>(null);
+  const [filtreStatut, setFiltreStatut] = useState<string>("TOUS");
+  const [recherche, setRecherche] = useState("");
 
   const chargerBugs = useCallback(() => {
     apiFetch("/bugs").then(setBugs).catch(() => setBugs([]));
@@ -60,29 +65,79 @@ export default function TousLesBugsPage() {
     }
   }
 
-  return (
-    <div>
-      <h1 className="mb-1 text-2xl font-bold text-[#12151F]">
-        {estDeveloppeur ? "Bugs à traiter" : "Suivi des bugs"}
-      </h1>
-      <p className="mb-6 text-sm text-slate-500">
-        {estDeveloppeur ? "Prenez en charge un bug pour commencer à le corriger." : "Tous les bugs signalés sur vos projets."}
-      </p>
+  const bugsFiltres = bugs?.filter(b => {
+    const matchStatut = filtreStatut === "TOUS" || b.statut === filtreStatut;
+    const matchRecherche = !recherche || (b.titre || "").toLowerCase().includes(recherche.toLowerCase()) || b.projet.nom.toLowerCase().includes(recherche.toLowerCase());
+    return matchStatut && matchRecherche;
+  }) ?? null;
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+  return (
+    <div className="max-w-5xl mx-auto">
+      <Link href="/projets" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#12151F] transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Retour
+      </Link>
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12151F] text-white">
+            <Bug className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#12151F]">
+              {estDeveloppeur ? "Bugs à traiter" : "Suivi des bugs"}
+            </h1>
+            <p className="text-sm text-slate-500">
+              {estDeveloppeur ? "Prenez en charge un bug pour commencer à le corriger." : "Tous les bugs signalés sur vos projets."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input placeholder="Rechercher un bug..." value={recherche} onChange={e => setRecherche(e.target.value)} className="pl-9 h-8 bg-white" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <Select value={filtreStatut} onValueChange={(v) => setFiltreStatut(v ?? "TOUS")}>
+              <SelectTrigger className="w-[200px] h-8 bg-white">
+                <SelectValue placeholder="Filtrer par état" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TOUS">Tous les états</SelectItem>
+                <SelectItem value="EN_COURS_DE_TRAITEMENT">En traitement</SelectItem>
+                <SelectItem value="EN_ATTENTE_VALIDATION">En attente</SelectItem>
+                <SelectItem value="BLOQUE">Bloqué</SelectItem>
+                <SelectItem value="RESOLU">Résolu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {bugsFiltres && <span className="text-xs text-slate-500 hidden sm:inline">{bugsFiltres.length} résultat{bugsFiltres.length !== 1 ? "s" : ""}</span>}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {bugs === null ? (
           Array.from({ length: 4 }).map((_, i) => <div key={i} className="p-5"><Skeleton className="h-5 w-full" /></div>)
+        ) : bugsFiltres && bugsFiltres.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Search className="h-6 w-6 text-slate-400" /></div>
+            <p className="text-sm font-medium text-slate-900">Aucun bug trouvé</p>
+            <p className="text-sm text-slate-500">{recherche || filtreStatut !== "TOUS" ? "Aucun bug ne correspond aux filtres." : "Aucun bug pour l'instant."}</p>
+            {(recherche || filtreStatut !== "TOUS") && (
+              <Button variant="outline" size="sm" onClick={() => { setRecherche(""); setFiltreStatut("TOUS"); }} className="mt-1">Réinitialiser les filtres</Button>
+            )}
+          </div>
         ) : bugs.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-500">Aucun bug pour l'instant.</p>
         ) : (
-          bugs.map((bug, i) => {
+          (bugsFiltres ?? []).map((bug, i) => {
             const statut = configStatut[bug.statut];
             const Icone = statut.icone;
             const estPrisParMoi = bug.developpeur?.id === utilisateur?.id;
             const estDeplie = bugDeplie === bug.id;
 
             return (
-              <div key={bug.id} className={i !== bugs.length - 1 ? "border-b border-slate-200" : ""}>
+              <div key={bug.id} className={i !== (bugsFiltres?.length ?? 0) - 1 ? "border-b border-slate-200" : ""}>
                 <div className="flex items-center justify-between gap-4 px-5 py-4">
                   <button onClick={() => setBugDeplie(estDeplie ? null : bug.id)} className="flex flex-1 items-center gap-2 text-left">
                     <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${estDeplie ? "rotate-180" : ""}`} />
