@@ -8,7 +8,7 @@ export type ReponseIA = { content: string | null; tool_calls?: any[] };
 export class IaProviderService {
   private readonly logger = new Logger(IaProviderService.name);
 
-  // --- Groq (NOUVEAU fournisseur) ---
+  // --- Groq 
   private readonly MODELES_GROQ_TEXTE = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3-32b'];
   private readonly MODELES_GROQ_VISION = ['llama-3.2-90b-vision-preview', 'llama-3.2-11b-vision-preview'];
 
@@ -51,7 +51,7 @@ export class IaProviderService {
     }
   }
 
-  // Générique : tous les fournisseurs OpenAI-compatibles (OpenRouter, Groq, Mistral) partagent cette logique
+  // Générique  tous les fournisseurs OpenAI-compatibles (OpenRouter, Groq, Mistral) partagent cette logique
   private async appelerListeModeles(url: string, apiKey: string | undefined, nomVar: string, modeles: string[], messages: any[], outils: any[] | null, nomFournisseur: string): Promise<ReponseIA> {
     if (!apiKey) throw new Error(`${nomVar} manquante dans le fichier .env`);
     let derniereErreur: Error | null = null;
@@ -94,8 +94,7 @@ export class IaProviderService {
     return { content: message.content ?? null, tool_calls: message.tool_calls ?? [] };
   }
 
-  // Gemini : garde EXACTEMENT ta version corrigée (doc 53) — thoughtSignature, conversion outils,
-  // téléchargement d'image en base64, functionResponse au format objet — tout ça est déjà bon, ne change rien.
+ 
   private async telechargerImageEnBase64(url: string): Promise<{ mimeType: string; data: string }> {
     const reponse = await fetch(url);
     if (!reponse.ok) throw new Error(`Impossible de télécharger l'image : ${url}`);

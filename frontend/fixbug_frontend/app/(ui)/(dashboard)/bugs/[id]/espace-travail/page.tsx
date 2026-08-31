@@ -592,6 +592,7 @@ export default function EspaceTravailPage() {
                       title="Ouvrir l'assistant IA"
                       className="mr-2 flex items-center gap-1.5 rounded-full bg-[#12151F] px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-[#1a1f2e] transition-colors"
                     >
+                      <ArrowLeft/>
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
                         <Bot className="h-3.5 w-3.5" />
                       </span>

@@ -212,7 +212,7 @@ export default function InscriptionPage() {
 
           <div className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-2">
             <div className="w-full max-w-[420px] max-h-full overflow-hidden flex flex-col">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm overflow-hidden flex flex-col">
+              <div className="  p-4 shadow-sm overflow-hidden flex flex-col">
                 <div className="shrink-0">
                   <Logo />
                   <h1 className="mt-3 text-[20px] font-semibold tracking-tight text-[#0B0E17]">Créer votre compte</h1>
@@ -259,13 +259,10 @@ export default function InscriptionPage() {
                     Continuer
                   </Button>
 
-                  <p className="mt-3 text-center text-xs text-slate-500">
-                    Vous avez déjà un compte ?{" "}
-                    <Link href="/connexion" className="font-semibold text-slate-900">Connectez-vous</Link>
-                  </p>
+                  
                 </div>
               </div>
-              <p className="mt-2 text-center text-[11px] text-slate-400 shrink-0">En continuant, vous acceptez nos conditions d’utilisation.</p>
+              
             </div>
           </div>
         </div>

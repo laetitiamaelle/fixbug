@@ -59,7 +59,8 @@ export class BugsService {
       projet: {
         chefProjetId: utilisateur.id,
       },
-    };
+      
+    }
   } else if (utilisateur.role === 'DEVELOPPEUR') {
     where = {
       OR: [
@@ -87,6 +88,7 @@ export class BugsService {
         },
       },
     };
+   
   }
 
   if (projetId) {

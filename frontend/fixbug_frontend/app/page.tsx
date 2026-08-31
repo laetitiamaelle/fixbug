@@ -132,21 +132,14 @@ export default function FixbugLanding() {
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-white pb-12 pt-24 sm:pb-16 sm:pt-32">
-        <div className="pointer-events-none absolute -top-32 left-[10%] h-[320px] w-[320px] sm:h-[480px] sm:w-[480px] rounded-full bg-emerald-500/[0.07] blur-[60px] sm:blur-[70px]" />
-        <div className="pointer-events-none absolute -top-20 right-[5%] h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] rounded-full bg-violet-500/[0.05] blur-[50px] sm:blur-[70px]" />
-        <div className="pointer-events-none absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-slate-200/40 blur-[50px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,#000_70%,transparent_110%)]" />
+       
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
           <div className="w-full min-w-0">
-            <div className="reveal inline-flex max-w-full flex-wrap items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
-              <span className="relative flex h-2 w-2 shrink-0"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
-              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-slate-600"></span>
-              
-            </div>
+            
 
             <h1 className="reveal d1 mt-6 max-w-[600px] text-[30px] font-[720] leading-[0.95] tracking-[-0.03em] text-[#0B0E17] sm:text-[42px] lg:text-[48px] xl:text-[52px]">
-              Un bug signalé<br />Une correction<br /><span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">validée par un humain</span>
+              Un bug signalé<br />Une correction<br /><span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">validée </span>
             </h1>
 
             <p className="reveal d2 mt-5 max-w-[540px] text-[15px] leading-[1.7] text-slate-600 sm:text-[16px]">
