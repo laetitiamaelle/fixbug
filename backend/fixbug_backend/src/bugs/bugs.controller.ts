@@ -6,7 +6,7 @@ import { JwtAuthGuard } from 'src/users/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/users/guards/roles.guards';
 import { Roles } from 'src/users/decorators/roles.decorators';
 import { CurrentUser } from 'src/users/decorators/current-user.decorator';
-import { Proposition } from '../agent-ia/agent-ia.service'; 
+import { Proposition } from '../agent-ia/agent-ia.service';
 
 @Controller('bugs')
 @UseGuards(JwtAuthGuard)
@@ -40,6 +40,7 @@ export class BugsController {
   obtenirFichiers(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
     return this.bugsService.obtenirFichiersDuBug(id, u.id);
   }
+
   @Patch(':id/demander-analyse')
   @UseGuards(RolesGuard)
   @Roles('DEVELOPPEUR')
@@ -47,45 +48,38 @@ export class BugsController {
     return this.bugsService.demanderAnalyseIA(id, u.id, body?.instructionDeveloppeur);
   }
 
-  @Post(':id/valider-envoyer')
+  // bugs.controller.ts — AJOUT
+  @Get(':id')
   @UseGuards(RolesGuard)
-  @Roles('DEVELOPPEUR')
-  validerEtEnvoyer(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
-    return this.bugsService.validerEtEnvoyer(id, u.id, body.propositions);
+  @Roles('DEVELOPPEUR', 'CHEF_PROJET')
+  obtenirBug(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number; role: string }) {
+    return this.bugsService.obtenirBug(id, u);
+  }
+  // bugs.controller.ts — AJOUT
+  @Post('chat-testeur')
+  @UseGuards(RolesGuard)
+  @Roles('TESTEUR')
+  @UseInterceptors(FilesInterceptor('captures')) // même mécanisme Multer que ta route /bugs existante
+  discuterEtDeclarer(
+    @CurrentUser() u: { id: number },
+    @Body() body: { projetId: string; message: string; historique: string }, // historique envoyé en JSON stringifié depuis le frontend
+    @UploadedFiles() fichiers: Express.Multer.File[],
+  ) {
+    const historique = body.historique ? JSON.parse(body.historique) : [];
+    return this.bugsService.discuterEtDeclarer(u.id, Number(body.projetId), body.message, historique, fichiers);
   }
 
-  // bugs.controller.ts — AJOUT
-@Get(':id')
-@UseGuards(RolesGuard)
-@Roles('DEVELOPPEUR', 'CHEF_PROJET')
-obtenirBug(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number; role: string }) {
-  return this.bugsService.obtenirBug(id, u);
-}
-  // bugs.controller.ts — AJOUT
-@Post('chat-testeur')
-@UseGuards(RolesGuard)
-@Roles('TESTEUR')
-@UseInterceptors(FilesInterceptor('captures')) // même mécanisme Multer que ta route /bugs existante
-discuterEtDeclarer(
-  @CurrentUser() u: { id: number },
-  @Body() body: { projetId: string; message: string; historique: string }, // historique envoyé en JSON stringifié depuis le frontend
-  @UploadedFiles() fichiers: Express.Multer.File[],
-) {
-  const historique = body.historique ? JSON.parse(body.historique) : [];
-  return this.bugsService.discuterEtDeclarer(u.id, Number(body.projetId), body.message, historique, fichiers);
-}
+  @Post(':id/pousser-github')
+  @UseGuards(RolesGuard)
+  @Roles('DEVELOPPEUR')
+  pousserSurGithub(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
+    return this.bugsService.pousserSurGithub(id, u.id, body.propositions);
+  }
 
-@Post(':id/pousser-github')
-@UseGuards(RolesGuard)
-@Roles('DEVELOPPEUR')
-pousserSurGithub(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }, @Body() body: { propositions: Proposition[] }) {
-  return this.bugsService.pousserSurGithub(id, u.id, body.propositions);
-}
-
-@Post(':id/creer-pull-request')
-@UseGuards(RolesGuard)
-@Roles('DEVELOPPEUR')
-creerPullRequest(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
-  return this.bugsService.creerPullRequest(id, u.id);
-}
+  @Post(':id/creer-pull-request')
+  @UseGuards(RolesGuard)
+  @Roles('DEVELOPPEUR')
+  creerPullRequest(@Param('id', ParseIntPipe) id: number, @CurrentUser() u: { id: number }) {
+    return this.bugsService.creerPullRequest(id, u.id);
+  }
 }

@@ -1,3 +1,4 @@
+// outils.ts
 export const outilsAnalyse = [
   {
     type: 'function',
@@ -45,18 +46,44 @@ export const outilsAnalyse = [
 export const outilConversationTesteur = [
   {
     type: 'function',
+
     function: {
       name: 'declarerBug',
+
       description:
-        "Enregistre un nouveau bug dans le système, UNIQUEMENT si l'utilisateur a décrit un problème technique concret et suffisamment clair (quoi ne fonctionne pas, où). Ne jamais appeler cet outil pour une salutation, une question générale, ou une description encore trop vague — dans ce cas, pose plutôt une question de clarification en texte normal.",
+        "Enregistre un nouveau bug dans le système, UNIQUEMENT " +
+        "si l'utilisateur a décrit un problème technique concret " +
+        "et suffisamment clair (quoi ne fonctionne pas, où). " +
+        "Ne jamais appeler cet outil pour une salutation, une " +
+        "question générale, ou une description encore trop vague. " +
+        "Dans ce cas, pose plutôt une question de clarification " +
+        "en texte normal.",
+
       parameters: {
         type: 'object',
+
         properties: {
-          titre: { type: 'string', description: 'Titre court et factuel du bug (ex: "Bug sur le bouton Ajouter — couleur incorrecte"), maximum 10 mots.' },
-          descriptionReformulee: { type: 'string', description: "La description du problème, reformulée clairement à partir de ce que l'utilisateur a dit." },
+         
+          titre: {
+            type: 'string',
+            description:
+              'Titre court et factuel du bug, maximum 10 mots.',
+          },
+
+          descriptionReformulee: {
+            type: 'string',
+            description:
+              "Description claire du problème, reformulée à partir " +
+              "de ce que l'utilisateur a expliqué.",
+          },
         },
-        required: ['titre', 'descriptionReformulee'],
+
+        required: [
+          'titre',
+          'descriptionReformulee',
+        ],
       },
     },
   },
 ];
+

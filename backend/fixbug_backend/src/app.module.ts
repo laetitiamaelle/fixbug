@@ -14,6 +14,7 @@ import { GithubModule } from './github/github.module';
 import { AgentIaModule } from './agent-ia/agent-ia.module';
 import { ConversationsModule } from './conversations/conversations.module';
 
+
 @Module({
   imports: [PrismaModule, UsersModule,ConfigModule.forRoot({
       isGlobal: true,

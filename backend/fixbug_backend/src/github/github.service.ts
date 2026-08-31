@@ -27,9 +27,15 @@ export class GithubService {
         return reponse.data.map((f) => ({ nom: f.name, type: f.type, chemin: f.path }));
     }
 
-    async lireFichier(lienGithub: string, cheminFichier: string) {
+    // CORRECTIF : ajout du paramètre optionnel "ref" pour pouvoir lire le contenu
+    // d'un fichier sur une branche précise (et pas seulement sur main). Indispensable
+    // pour repousser des modifications sur une branche déjà existante : il faut lire
+    // le sha ACTUEL du fichier sur CETTE branche, pas sur main.
+    async lireFichier(lienGithub: string, cheminFichier: string, ref?: string) {
         const { owner, repo } = this.extraireOwnerRepo(lienGithub);
-        const reponse = await this.octokit.rest.repos.getContent({ owner, repo, path: cheminFichier });
+        const reponse = await this.octokit.rest.repos.getContent({
+            owner, repo, path: cheminFichier, ...(ref ? { ref } : {}),
+        });
         if (Array.isArray(reponse.data) || !('content' in reponse.data)) {
             throw new BadRequestException('Ce chemin ne correspond pas à un fichier');
         }
@@ -37,14 +43,29 @@ export class GithubService {
         return { contenu, sha: reponse.data.sha };
     }
 
+    // CORRECTIF : idempotente. Si la branche existe déjà (cas d'un développeur qui
+    // revient traiter un bug déjà poussé une première fois), on ne lève plus d'erreur —
+    // on réutilise simplement la branche existante au lieu de faire échouer tout le push.
     async creerBranche(lienGithub: string, nomNouvelleBranche: string) {
         const { owner, repo } = this.extraireOwnerRepo(lienGithub);
         const refMain = await this.octokit.rest.git.getRef({ owner, repo, ref: 'heads/main' });
         const shaDepart = refMain.data.object.sha;
-        await this.octokit.rest.git.createRef({
-            owner, repo, ref: `refs/heads/${nomNouvelleBranche}`, sha: shaDepart,
-        });
-        return {message:"bracnche creer avec succes" ,branche: nomNouvelleBranche };
+
+        try {
+            await this.octokit.rest.git.createRef({
+                owner, repo, ref: `refs/heads/${nomNouvelleBranche}`, sha: shaDepart,
+            });
+            this.logger.log(`Branche ${nomNouvelleBranche} créée`);
+        } catch (erreur: any) {
+            // 422 = "Reference already exists" — pas une vraie erreur dans notre cas,
+            // ça veut juste dire qu'on repousse sur une branche déjà créée précédemment.
+            if (erreur.status !== 422) {
+                throw erreur;
+            }
+            this.logger.log(`Branche ${nomNouvelleBranche} déjà existante — réutilisation`);
+        }
+
+        return { message: 'branche prête', branche: nomNouvelleBranche };
     }
 
     async modifierFichier(

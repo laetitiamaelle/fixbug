@@ -175,8 +175,8 @@ export class BugsService {
 
     return this.githubService.obtenirArborescenceComplete(bug.projet.liengit);
   }
-  // bugs.service.ts — dans demanderAnalyseIA
-  // bugs.service.ts — dans demanderAnalyseIA, remplace l'appel à analyserBug
+ 
+// bugs.service.ts — remplace demanderAnalyseIA par ceci
 async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDeveloppeur?: string) {
   const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
   if (!bug) throw new NotFoundException('Bug introuvable');
@@ -185,7 +185,6 @@ async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDevelop
   const contexte = instructionDeveloppeur ? `Bug initial : ${bug.description}\n\nInstruction : ${instructionDeveloppeur}` : bug.description;
   const { resumeIA, propositions } = await this.agentIaService.analyserBug(bug.projet.liengit, contexte, 'main', bug.captures);
 
-  // NOUVEAU : on ajoute ce tour à l'historique existant, au lieu de l'écraser
   const historiqueActuel = (bug.messagesDeveloppeur as any[]) ?? [];
   const nouvelHistorique = [
     ...historiqueActuel,
@@ -195,26 +194,9 @@ async demanderAnalyseIA(bugId: number, developpeurId: number, instructionDevelop
 
   return this.prisma.bug.update({
     where: { id: bugId },
-    data: {
-      proposition: JSON.stringify({ resumeIA, propositions }),
-      messagesDeveloppeur: nouvelHistorique, // NOUVEAU
-      statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE',
-    },
+    data: { proposition: JSON.stringify({ resumeIA, propositions }), messagesDeveloppeur: nouvelHistorique, statut: propositions.length > 0 ? 'EN_ATTENTE_VALIDATION' : 'BLOQUE' },
   });
 }
-
-  async validerEtEnvoyer(bugId: number, developpeurId: number, propositions: Proposition[]) {
-    const bug = await this.prisma.bug.findUnique({ where: { id: bugId }, include: { projet: true } });
-    if (!bug) throw new NotFoundException('Bug introuvable');
-    if (bug.developpeurId !== developpeurId) throw new ForbiddenException("Ce bug ne vous est pas assigné");
-
-    const nomBranche = `fix/bug-${bug.id}`;
-    const pr = await this.agentIaService.envoyerSurGithub(bug.projet.liengit, nomBranche, propositions, `Fix bug #${bug.id}`, bug.description);
-
-    const bugMisAJour = await this.prisma.bug.update({ where: { id: bugId }, data: { statut: 'RESOLU', numeroPR: pr.numero, urlPR: pr.url } });
-    await this.notificationsService.creerNotifications(bug.projet.chefProjetId, 'Pull Request créée', `PR #${pr.numero} créée pour le bug #${bug.id}`);
-    return bugMisAJour;
-  }
 
   // bugs.service.ts — AJOUT
 async obtenirBug(bugId: number, utilisateur: { id: number; role: string }) {

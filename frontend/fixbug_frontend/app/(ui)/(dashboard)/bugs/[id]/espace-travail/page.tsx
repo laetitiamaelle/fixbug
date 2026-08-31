@@ -41,17 +41,17 @@ type EtatModification = {
   statut: "en_attente" | "accepte" | "rejete";
 };
 
-// NOUVEAU : forme exacte de ce qu'on écrit/lit dans localStorage
+// forme exacte de ce qu'on écrit/lit dans localStorage
 type CacheWorkspace = {
   fichiers: Record<string, string>;
   modifications: EtatModification[];
-  branchePoussee: string | null; // NOUVEAU : sait si on a déjà poussé, même après un F5
+  branchePoussee: string | null;
 };
 
 export default function EspaceTravailPage() {
   const params = useParams();
   const bugId = params.id;
-  const cleCache = `fixbug-workspace-${bugId}`; // NOUVEAU : une clé de cache par bug
+  const cleCache = `fixbug-workspace-${bugId}`;
 
   // --- Environnement / fichiers ---
   const [statutEnv, setStatutEnv] = useState("Récupération des fichiers...");
@@ -66,6 +66,7 @@ export default function EspaceTravailPage() {
   const dejaLance = useRef(false);
   const [bug, setBug] = useState<{ titre: string | null; description: string; captures: string[] } | null>(null);
   const [detailsBugOuverts, setDetailsBugOuverts] = useState(true);
+  const contenuOriginalRef = useRef<Record<string, string>>({});
 
   // --- Chat ---
   const [chatOuvert, setChatOuvert] = useState(false);
@@ -75,9 +76,9 @@ export default function EspaceTravailPage() {
   const [modifications, setModifications] = useState<EtatModification[]>([]);
 
   // --- GitHub, en 2 étapes distinctes ---
-  const [branchePoussee, setBranchePoussee] = useState<string | null>(null); // NOUVEAU : null tant que rien n'est poussé
-  const [pushEnCours, setPushEnCours] = useState(false); // NOUVEAU
-  const [prEnCours, setPrEnCours] = useState(false); // remplace envoiEnCours
+  const [branchePoussee, setBranchePoussee] = useState<string | null>(null);
+  const [pushEnCours, setPushEnCours] = useState(false);
+  const [prEnCours, setPrEnCours] = useState(false);
   const [resultatPR, setResultatPR] = useState<ResultatPR>(null);
   const finChatRef = useRef<HTMLDivElement>(null);
 
@@ -85,17 +86,26 @@ export default function EspaceTravailPage() {
     finChatRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, enReflexion]);
 
-  // NOUVEAU : sauvegarde automatique dans localStorage à chaque changement pertinent —
-  // c'est ce qui permet de ne jamais perdre le travail en cours au rechargement de page.
+  // sauvegarde automatique dans localStorage à chaque changement pertinent
   useEffect(() => {
-    if (Object.keys(fichiers).length === 0) return; // rien à sauver tant que rien n'est chargé
+    if (Object.keys(fichiers).length === 0) return;
     try {
       const cache: CacheWorkspace = { fichiers, modifications, branchePoussee };
       localStorage.setItem(cleCache, JSON.stringify(cache));
     } catch {
-      // localStorage plein/indisponible — pas bloquant, on continue sans cache cette fois
+      // localStorage plein/indisponible — pas bloquant
     }
   }, [fichiers, modifications, branchePoussee, cleCache]);
+
+  // CORRECTIF : log de debug déplacé dans un effet, protégé côté client uniquement.
+  // Avant, `console.log(window.crossOriginIsolated)` s'exécutait au chargement du
+  // module, y compris pendant le rendu serveur (SSR) où `window` n'existe pas
+  // → risque de crash / erreur d'hydratation.
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      console.log("crossOriginIsolated :", window.crossOriginIsolated);
+    }
+  }, []);
 
   // --- Montage WebContainer ---
   useEffect(() => {
@@ -113,7 +123,7 @@ export default function EspaceTravailPage() {
     if (terminalRef.current) {
       terminal.open(terminalRef.current);
       fitAddon.fit();
-      const observer = new ResizeObserver(() => { try { fitAddon.fit(); } catch {} });
+      const observer = new ResizeObserver(() => { try { fitAddon.fit(); } catch { } });
       observer.observe(terminalRef.current);
     }
 
@@ -126,12 +136,15 @@ export default function EspaceTravailPage() {
       }
     });
 
+    // CORRECTIF : la définition dupliquée de handleEditionManuelle qui vivait ici
+    // a été supprimée. C'était du code mort : jamais appelée (l'Editor est branché
+    // sur la version définie plus bas, au niveau du composant), mais elle contenait
+    // la BONNE logique de création d'entrée. Cette logique a été fusionnée dans la
+    // version réellement utilisée, cf. plus bas dans le composant.
+
     async function demarrer() {
-      // Récupère le bug + reconstruit le chat développeur (persisté côté backend)
       apiFetch(`/bugs/${bugId}`).then((data) => {
         setBug(data);
-        // NOUVEAU : si le backend sait déjà qu'une branche a été poussée (ex: après F5
-        // AVANT que le cache localStorage existe, ou navigateur différent), on le reflète.
         if (data.branchePoussee && !branchePoussee) setBranchePoussee(data.branchePoussee);
         if (data.urlPR) setResultatPR({ url: data.urlPR, numeroPR: data.numeroPR });
 
@@ -142,7 +155,6 @@ export default function EspaceTravailPage() {
         if (messagesReconstruits.length > 0) setMessages(messagesReconstruits);
       }).catch(() => setBug(null));
 
-      // NOUVEAU : on regarde d'abord le cache local avant d'aller chercher sur GitHub
       const cacheBrut = localStorage.getItem(cleCache);
       let recus: FichierRecu[];
 
@@ -164,6 +176,7 @@ export default function EspaceTravailPage() {
 
       const carte = Object.fromEntries(recus.map((f) => [f.chemin, f.contenu]));
       setFichiers(carte);
+      contenuOriginalRef.current = { ...carte };
       setFichierActif(recus[0]?.chemin ?? null);
 
       const arborescence = construireArborescenceWebContainer(recus);
@@ -214,7 +227,7 @@ export default function EspaceTravailPage() {
     demarrer().catch((err) => setStatutEnv("Erreur : " + err.message));
   }, [bugId]);
 
-  // NOUVEAU : repartir de zéro, en abandonnant le cache local et les modifications en cours
+  // repartir de zéro, en abandonnant le cache local et les modifications en cours
   function reinitialiserDepuisGithub() {
     localStorage.removeItem(cleCache);
     window.location.reload();
@@ -224,7 +237,7 @@ export default function EspaceTravailPage() {
     const instance = instanceRef.current;
     if (!instance) return;
     for (const prop of props) {
-      try { await instance.fs.writeFile(prop.cheminFichier, prop.nouveauContenu); } catch {}
+      try { await instance.fs.writeFile(prop.cheminFichier, prop.nouveauContenu); } catch { }
     }
   }
 
@@ -296,19 +309,39 @@ export default function EspaceTravailPage() {
     try {
       const scripts = JSON.parse(packageJson.contenu).scripts || {};
       for (const nom of ["dev", "start", "serve"]) if (scripts[nom]) return ["npm", "run", nom];
-    } catch {}
+    } catch { }
     return null;
   }
 
+  // CORRECTIF : version unique et corrigée de handleEditionManuelle.
+  // Avant : si le fichier édité n'avait pas encore d'entrée dans `modifications`,
+  // rien ne se passait (`: prev`) — une édition manuelle sur un fichier jamais
+  // touché par l'IA n'était donc JAMAIS enregistrée, et le bouton "Pousser sur
+  // GitHub" restait désactivé indéfiniment pour ce cas. On crée maintenant une
+  // entrée directement en statut "accepte" (une édition manuelle EST déjà la
+  // décision du développeur, pas besoin d'un cycle accepter/rejeter).
   function handleEditionManuelle(nouveauContenu: string | undefined) {
     if (!fichierActif || nouveauContenu === undefined) return;
     setFichiers((prev) => ({ ...prev, [fichierActif]: nouveauContenu }));
-    setModifications((prev) =>
-      prev.some((m) => m.cheminFichier === fichierActif)
-        ? prev.map((m) => (m.cheminFichier === fichierActif ? { ...m, contenuPropose: nouveauContenu } : m))
-        : prev,
-    );
-    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => {});
+
+    setModifications((prev) => {
+      const existe = prev.some((m) => m.cheminFichier === fichierActif);
+      if (existe) {
+        return prev.map((m) =>
+          m.cheminFichier === fichierActif ? { ...m, contenuPropose: nouveauContenu } : m,
+        );
+      }
+      const nouvelleEntree: EtatModification = {
+        cheminFichier: fichierActif,
+        contenuOriginal: contenuOriginalRef.current[fichierActif] ?? "",
+        contenuPropose: nouveauContenu,
+        explication: "Modifié manuellement par le développeur",
+        statut: "accepte",
+      };
+      return [...prev, nouvelleEntree];
+    });
+
+    instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => { });
   }
 
   function accepterModification(chemin: string) {
@@ -320,16 +353,16 @@ export default function EspaceTravailPage() {
     const mod = modifications.find((m) => m.cheminFichier === chemin);
     if (!mod) return;
     setFichiers((prev) => ({ ...prev, [chemin]: mod.contenuOriginal }));
-    instanceRef.current?.fs.writeFile(chemin, mod.contenuOriginal).catch(() => {});
+    instanceRef.current?.fs.writeFile(chemin, mod.contenuOriginal).catch(() => { });
     setModifications((prev) => prev.map((m) => (m.cheminFichier === chemin ? { ...m, statut: "rejete" } : m)));
     toast.info(`Modification annulée : ${chemin}`);
   }
 
-  // NOUVEAU : étape 1 — pousser sur GitHub (branche + commits), sans créer de PR
+  // étape 1 — pousser sur GitHub (branche + commits), sans créer de PR
   async function pousserSurGithub() {
     const modificationsAcceptees = modifications.filter((m) => m.statut === "accepte");
     if (modificationsAcceptees.length === 0) {
-      toast.error("Acceptez au moins une modification avant de pousser sur GitHub.");
+      toast.error("Acceptez au moins une modification (ou éditez un fichier) avant de pousser sur GitHub.");
       return;
     }
     setPushEnCours(true);
@@ -350,7 +383,7 @@ export default function EspaceTravailPage() {
     }
   }
 
-  // NOUVEAU : étape 2 — créer la PR, uniquement possible après un push réussi
+  // étape 2 — créer la PR, uniquement possible après un push réussi
   async function creerPullRequest() {
     if (!branchePoussee) {
       toast.error("Poussez d'abord vos modifications sur GitHub.");
@@ -369,10 +402,11 @@ export default function EspaceTravailPage() {
   }
 
   const nomsFichiers = Object.keys(fichiers);
+  const nombreModificationsAcceptees = modifications.filter((m) => m.statut === "accepte").length;
 
   return (
     <div className="relative flex h-[calc(100vh-64px)] -m-6 flex-col gap-0 overflow-hidden bg-slate-50/30">
-      {/* Barre supérieure — moderne, sticky, glass effect */}
+      {/* Barre supérieure */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-4 py-2.5 shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2.5">
           <Link href="/bugs" className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors">
@@ -392,38 +426,40 @@ export default function EspaceTravailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-
-          {resultatPR ? (
-            // Une PR existe déjà : on affiche juste le lien, plus d'action à faire
+          {/* CORRECTIF : le lien PR (s'il existe) et le bouton push cohabitent
+              désormais. Revenir traiter un bug déjà poussé/déjà en PR reste
+              possible : pousser à nouveau ajoute simplement des commits sur la
+              branche existante (le PR déjà ouvert les reflète automatiquement). */}
+          {resultatPR && (
             <a href={resultatPR.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
               <CheckCircle2 className="h-3.5 w-3.5" /> PR #{resultatPR.numeroPR} <ExternalLink className="h-3 w-3" />
             </a>
-          ) : (
-            <>
-              {/* NOUVEAU : étape 1, toujours visible */}
-              <Button
-                onClick={pousserSurGithub}
-                disabled={pushEnCours || modifications.filter((m) => m.statut === "accepte").length === 0}
-                size="sm"
-                variant={branchePoussee ? "outline" : "default"}
-                className={`gap-1.5 text-xs sm:text-sm ${branchePoussee ? "" : "bg-[#12151F] hover:bg-[#12151F]/90"}`}
-              >
-                {pushEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitBranch className="h-3.5 w-3.5" />}
-                {branchePoussee ? "Repousser sur GitHub" : "Pousser sur GitHub"}
-              </Button>
+          )}
 
-              {/* NOUVEAU : étape 2, désactivée tant que rien n'est poussé */}
-              <Button
-                onClick={creerPullRequest}
-                disabled={prEnCours || !branchePoussee}
-                size="sm"
-                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm"
-                title={!branchePoussee ? "Poussez d'abord vos modifications sur GitHub" : undefined}
-              >
-                {prEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitPullRequest className="h-3.5 w-3.5" />}
-                Créer la Pull Request
-              </Button>
-            </>
+          <Button
+            onClick={pousserSurGithub}
+            disabled={pushEnCours || nombreModificationsAcceptees === 0}
+            size="sm"
+            variant={branchePoussee ? "outline" : "default"}
+            title={nombreModificationsAcceptees === 0 ? "Acceptez ou éditez au moins un fichier" : undefined}
+            className={`gap-1.5 text-xs sm:text-sm ${branchePoussee ? "" : "bg-[#12151F] hover:bg-[#12151F]/90"}`}
+          >
+            {pushEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitBranch className="h-3.5 w-3.5" />}
+            {branchePoussee ? "Repousser sur GitHub" : "Pousser sur GitHub"}
+          </Button>
+
+          {/* Une fois la PR ouverte, plus besoin d'en recréer une — seul le push reste utile */}
+          {!resultatPR && (
+            <Button
+              onClick={creerPullRequest}
+              disabled={prEnCours || !branchePoussee}
+              size="sm"
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm"
+              title={!branchePoussee ? "Poussez d'abord vos modifications sur GitHub" : undefined}
+            >
+              {prEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitPullRequest className="h-3.5 w-3.5" />}
+              Créer la Pull Request
+            </Button>
           )}
         </div>
       </div>
