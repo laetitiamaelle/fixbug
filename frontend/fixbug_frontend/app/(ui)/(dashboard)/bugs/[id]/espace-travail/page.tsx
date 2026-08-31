@@ -11,7 +11,7 @@ import "xterm/css/xterm.css";
 import {
   Send, Loader2, Code2, Eye, CheckCircle2, XCircle,
   Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, AlertCircle, ChevronDown,
-  GitBranch, GitPullRequest, ArrowLeft,RefreshCw
+  GitBranch, GitPullRequest, ArrowLeft, RefreshCw,FilePlus,FolderPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -95,51 +95,51 @@ export default function EspaceTravailPage() {
   // creer dossier et fichier
 
   const [creationOuverte, setCreationOuverte] = useState<"fichier" | "dossier" | null>(null);
-const [nomCreation, setNomCreation] = useState("");
-const creationInputRef = useRef<HTMLInputElement>(null);
+  const [nomCreation, setNomCreation] = useState("");
+  const creationInputRef = useRef<HTMLInputElement>(null);
 
-useEffect(() => {
-  if (creationOuverte) creationInputRef.current?.focus();
-}, [creationOuverte]);
+  useEffect(() => {
+    if (creationOuverte) creationInputRef.current?.focus();
+  }, [creationOuverte]);
 
-async function confirmerCreation() {
-  const chemin = nomCreation.trim().replace(/^\/+/, "");
-  if (!chemin) { setCreationOuverte(null); return; }
+  async function confirmerCreation() {
+    const chemin = nomCreation.trim().replace(/^\/+/, "");
+    if (!chemin) { setCreationOuverte(null); return; }
 
-  if (creationOuverte === "dossier") {
-    try {
-      await instanceRef.current?.fs.mkdir(chemin, { recursive: true });
-      toast.success(`Dossier créé : ${chemin}`);
-    } catch {
-      toast.error("Impossible de créer ce dossier");
+    if (creationOuverte === "dossier") {
+      try {
+        await instanceRef.current?.fs.mkdir(chemin, { recursive: true });
+        toast.success(`Dossier créé : ${chemin}`);
+      } catch {
+        toast.error("Impossible de créer ce dossier");
+      }
+      setCreationOuverte(null);
+      setNomCreation("");
+      return;
     }
+
+    // Fichier — crée aussi les dossiers parents manquants si le chemin en contient
+    // (ex: "src/components/Nouveau.tsx" crée src/components/ s'il n'existe pas)
+    if (fichiers[chemin]) {
+      toast.error("Ce fichier existe déjà");
+      return;
+    }
+    const dossierParent = chemin.includes("/") ? chemin.slice(0, chemin.lastIndexOf("/")) : null;
+    try {
+      if (dossierParent) await instanceRef.current?.fs.mkdir(dossierParent, { recursive: true });
+      await instanceRef.current?.fs.writeFile(chemin, "");
+    } catch { }
+
+    setFichiers((prev) => ({ ...prev, [chemin]: "" }));
+    setModifications((prev) => [...prev, {
+      cheminFichier: chemin, contenuOriginal: "", contenuPropose: "",
+      explication: "Nouveau fichier créé par le développeur", statut: "accepte",
+    }]);
+    setFichierActif(chemin);
     setCreationOuverte(null);
     setNomCreation("");
-    return;
+    declencherRafraichissementPreview(true);
   }
-
-  // Fichier — crée aussi les dossiers parents manquants si le chemin en contient
-  // (ex: "src/components/Nouveau.tsx" crée src/components/ s'il n'existe pas)
-  if (fichiers[chemin]) {
-    toast.error("Ce fichier existe déjà");
-    return;
-  }
-  const dossierParent = chemin.includes("/") ? chemin.slice(0, chemin.lastIndexOf("/")) : null;
-  try {
-    if (dossierParent) await instanceRef.current?.fs.mkdir(dossierParent, { recursive: true });
-    await instanceRef.current?.fs.writeFile(chemin, "");
-  } catch { }
-
-  setFichiers((prev) => ({ ...prev, [chemin]: "" }));
-  setModifications((prev) => [...prev, {
-    cheminFichier: chemin, contenuOriginal: "", contenuPropose: "",
-    explication: "Nouveau fichier créé par le développeur", statut: "accepte",
-  }]);
-  setFichierActif(chemin);
-  setCreationOuverte(null);
-  setNomCreation("");
-  declencherRafraichissementPreview(true);
-}
 
 
   useEffect(() => {
@@ -424,8 +424,7 @@ async function confirmerCreation() {
     }
   }
 
-  // MODIFIÉ : peut désormais être rappelée après un nouveau push, même si une PR
-  // existe déjà — le backend renvoie les infos de la PR existante au lieu d'échouer.
+
   async function creerPullRequest() {
     if (!branchePoussee) {
       toast.error("Poussez d'abord vos modifications sur GitHub.");
@@ -610,9 +609,34 @@ async function confirmerCreation() {
                     <ResizablePanelGroup orientation="horizontal" className="flex-1">
                       <ResizablePanel defaultSize={150} minSize={150} maxSize={200}>
                         <div className="h-full border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
-                          <button onClick={creerNouveauFichier} className="w-full border-b border-slate-100 px-3 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-50">
-                            + Nouveau fichier
-                          </button>
+                          <div className="border-b border-slate-100 bg-white">
+                            {/* {creationOuverte ? (
+                              <div className="flex items-center gap-1.5 px-2 py-1.5">
+                                {creationOuverte === "dossier" ? <Folder className="h-3.5 w-3.5 shrink-0 text-slate-400" /> : <FilePlus className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                                <input
+                                  ref={creationInputRef}
+                                  value={nomCreation}
+                                  onChange={(e) => setNomCreation(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") confirmerCreation();
+                                    if (e.key === "Escape") { setCreationOuverte(null); setNomCreation(""); }
+                                  }}
+                                  onBlur={() => { if (!nomCreation.trim()) setCreationOuverte(null); }}
+                                  placeholder={creationOuverte === "dossier" ? "nom-du-dossier" : "src/components/Fichier.tsx"}
+                                  className="flex-1 rounded border border-blue-400 bg-white px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-blue-200"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex items-center">
+                                <button onClick={() => setCreationOuverte("fichier")} className="flex flex-1 items-center gap-1.5 px-3 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-50">
+                                  <FilePlus className="h-3.5 w-3.5" /> Fichier
+                                </button>
+                                <button onClick={() => setCreationOuverte("dossier")} className="flex flex-1 items-center gap-1.5 border-l border-slate-100 px-3 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-50">
+                                  <FolderPlus className="h-3.5 w-3.5" /> Dossier
+                                </button>
+                              </div>
+                            )} */}
+                          </div> 
                           <FileTree fichiers={nomsFichiers} fichierActif={fichierActif} onSelect={setFichierActif} fichiersModifies={new Set(modifications.map((m) => m.cheminFichier))} />
                         </div>
                       </ResizablePanel>
