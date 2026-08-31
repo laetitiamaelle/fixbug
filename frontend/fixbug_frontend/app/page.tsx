@@ -172,8 +172,7 @@ export default function FixbugLanding() {
                 
               </div>
             </div>
-            
-            <div className="animate-float absolute -top-3 right-2 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-lg lg:flex"><Bot className="h-3.5 w-3.5 text-violet-600" /><span className="text-xs font-medium text-slate-700">Agent IA • en attente</span></div>
+          
           </div>
         </div>
       </section>

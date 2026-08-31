@@ -5,12 +5,11 @@ export function SignupAside() {
     <div className="hidden h-full flex-col bg-slate-900 p-10 md:flex md:w-1/2 lg:p-14 relative overflow-hidden">
       <div className="pointer-events-none absolute -top-28 -right-28 h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-[70px]" />
       <div className="pointer-events-none absolute -bottom-32 -left-32 h-[480px] w-[480px] rounded-full bg-violet-500/10 blur-[80px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:28px_28px]" />
+      <div className="pointer-events-none absolute inset-0  bg-[size:28px_28px]" />
 
       <div className="relative flex items-center justify-end">
         <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          FixBug • IA supervisée
+         
         </span>
       </div>
 

@@ -144,7 +144,7 @@ export default function TousLesBugsPage() {
                     <div>
                       <p className="font-medium text-[#12151F]">{bug.titre || "Sans titre"}</p>
                       <p className="mt-0.5 text-sm text-slate-500">
-                        {bug.projet.nom} · {bug.testeur.prenom} {bug.testeur.nom} · {new Date(bug.createdAt).toLocaleDateString("fr-FR")}
+                        {bug.projet.nom} ·  declarer par {bug.testeur.prenom} {bug.testeur.nom} ·le : {new Date(bug.createdAt).toLocaleDateString("fr-FR")}
                       </p>
                       {bug.developpeur && (
                         <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
@@ -159,7 +159,7 @@ export default function TousLesBugsPage() {
                       <Icone className="h-3.5 w-3.5" />{statut.label}
                     </Badge>
 
-                    {/* NOUVEAU : lien vers la PR, visible pour tout le monde dès qu'elle existe */}
+                    {/*  lien vers la PR, visible pour tout le monde dès qu'elle existe */}
                     {bug.urlPR && (
                       <a
                         href={bug.urlPR}
@@ -178,9 +178,7 @@ export default function TousLesBugsPage() {
                       </Button>
                     )}
 
-                    {/* IMPORTANT : bug déjà assigné à MOI → toujours accessible, quel que soit son statut
-                        (même RESOLU), pour pouvoir consulter/continuer le travail — c'est ce bouton
-                        qui manquait après ta modification. */}
+                    
                     {estDeveloppeur && estPrisParMoi && (
                       <Button size="sm" onClick={() => router.push(`/bugs/${bug.id}/espace-travail`)} className="bg-[#12151F] hover:bg-[#12151F]/90">
                         Ouvrir l'espace de travail <ArrowRight className="ml-1 h-3.5 w-3.5" />

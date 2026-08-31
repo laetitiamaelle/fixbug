@@ -6,19 +6,19 @@ import { useParams } from "next/navigation";
 import { WebContainer } from "@webcontainer/api";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import Editor from "@monaco-editor/react";
+import Editor, { DiffEditor } from "@monaco-editor/react";
 import "xterm/css/xterm.css";
 import {
   Send, Loader2, Code2, Eye, CheckCircle2, XCircle,
-  Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, PanelLeft, AlertCircle, ChevronDown,
-  GitBranch, GitPullRequest, ArrowLeft,
+  Bot, ExternalLink, TerminalSquare, Sparkles, PanelLeftClose, AlertCircle, ChevronDown,
+  GitBranch, GitPullRequest, ArrowLeft,RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { apiFetch } from "@/lib/api";
 import { construireArborescenceWebContainer } from "@/lib/construire-arborescence";
 import { FileTree } from "../../../../../components/file-tree";
-import { IconeGithub } from "@/app/components/icone-github";
+import { filtrerFichiersPourIA } from "@/lib/fitrer-fichiers-ia";
 import { toast } from "sonner";
 
 let webcontainerInstancePromise: Promise<WebContainer> | null = null;
@@ -41,19 +41,27 @@ type EtatModification = {
   statut: "en_attente" | "accepte" | "rejete";
 };
 
-// forme exacte de ce qu'on écrit/lit dans localStorage
 type CacheWorkspace = {
   fichiers: Record<string, string>;
   modifications: EtatModification[];
   branchePoussee: string | null;
 };
 
+const DOSSIERS_EXCLUS_DU_PUSH = ["node_modules/", ".git/", ".next/", "dist/", "build/"];
+const EXTENSIONS_BINAIRES_EXCLUES_DU_PUSH = [".png", ".jpg", ".jpeg", ".gif", ".ico", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".pdf", ".mp4", ".mp3", ".zip"];
+
+function filtrerFichiersPourPush(fichiers: Record<string, string>): { chemin: string; contenu: string }[] {
+  return Object.entries(fichiers)
+    .filter(([chemin]) => !DOSSIERS_EXCLUS_DU_PUSH.some((d) => chemin.includes(d)))
+    .filter(([chemin]) => !EXTENSIONS_BINAIRES_EXCLUES_DU_PUSH.some((ext) => chemin.toLowerCase().endsWith(ext)))
+    .map(([chemin, contenu]) => ({ chemin, contenu }));
+}
+
 export default function EspaceTravailPage() {
   const params = useParams();
   const bugId = params.id;
   const cleCache = `fixbug-workspace-${bugId}`;
 
-  // --- Environnement / fichiers ---
   const [statutEnv, setStatutEnv] = useState("Récupération des fichiers...");
   const [envPret, setEnvPret] = useState(false);
   const [urlPreview, setUrlPreview] = useState<string | null>(null);
@@ -68,46 +76,113 @@ export default function EspaceTravailPage() {
   const [detailsBugOuverts, setDetailsBugOuverts] = useState(true);
   const contenuOriginalRef = useRef<Record<string, string>>({});
 
-  // --- Chat ---
   const [chatOuvert, setChatOuvert] = useState(false);
   const [messages, setMessages] = useState<MessageChat[]>([]);
   const [saisie, setSaisie] = useState("");
   const [enReflexion, setEnReflexion] = useState(false);
   const [modifications, setModifications] = useState<EtatModification[]>([]);
 
-  // --- GitHub, en 2 étapes distinctes ---
+  // etat iframe
+  const [previewVersion, setPreviewVersion] = useState(0);
+  const rafraichissementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [branchePoussee, setBranchePoussee] = useState<string | null>(null);
   const [pushEnCours, setPushEnCours] = useState(false);
   const [prEnCours, setPrEnCours] = useState(false);
   const [resultatPR, setResultatPR] = useState<ResultatPR>(null);
   const finChatRef = useRef<HTMLDivElement>(null);
 
+  // creer dossier et fichier
+
+  const [creationOuverte, setCreationOuverte] = useState<"fichier" | "dossier" | null>(null);
+const [nomCreation, setNomCreation] = useState("");
+const creationInputRef = useRef<HTMLInputElement>(null);
+
+useEffect(() => {
+  if (creationOuverte) creationInputRef.current?.focus();
+}, [creationOuverte]);
+
+async function confirmerCreation() {
+  const chemin = nomCreation.trim().replace(/^\/+/, "");
+  if (!chemin) { setCreationOuverte(null); return; }
+
+  if (creationOuverte === "dossier") {
+    try {
+      await instanceRef.current?.fs.mkdir(chemin, { recursive: true });
+      toast.success(`Dossier créé : ${chemin}`);
+    } catch {
+      toast.error("Impossible de créer ce dossier");
+    }
+    setCreationOuverte(null);
+    setNomCreation("");
+    return;
+  }
+
+  // Fichier — crée aussi les dossiers parents manquants si le chemin en contient
+  // (ex: "src/components/Nouveau.tsx" crée src/components/ s'il n'existe pas)
+  if (fichiers[chemin]) {
+    toast.error("Ce fichier existe déjà");
+    return;
+  }
+  const dossierParent = chemin.includes("/") ? chemin.slice(0, chemin.lastIndexOf("/")) : null;
+  try {
+    if (dossierParent) await instanceRef.current?.fs.mkdir(dossierParent, { recursive: true });
+    await instanceRef.current?.fs.writeFile(chemin, "");
+  } catch { }
+
+  setFichiers((prev) => ({ ...prev, [chemin]: "" }));
+  setModifications((prev) => [...prev, {
+    cheminFichier: chemin, contenuOriginal: "", contenuPropose: "",
+    explication: "Nouveau fichier créé par le développeur", statut: "accepte",
+  }]);
+  setFichierActif(chemin);
+  setCreationOuverte(null);
+  setNomCreation("");
+  declencherRafraichissementPreview(true);
+}
+
+
   useEffect(() => {
     finChatRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, enReflexion]);
 
-  // sauvegarde automatique dans localStorage à chaque changement pertinent
   useEffect(() => {
     if (Object.keys(fichiers).length === 0) return;
     try {
       const cache: CacheWorkspace = { fichiers, modifications, branchePoussee };
       localStorage.setItem(cleCache, JSON.stringify(cache));
-    } catch {
-      // localStorage plein/indisponible — pas bloquant
-    }
+    } catch { }
   }, [fichiers, modifications, branchePoussee, cleCache]);
 
-  // CORRECTIF : log de debug déplacé dans un effet, protégé côté client uniquement.
-  // Avant, `console.log(window.crossOriginIsolated)` s'exécutait au chargement du
-  // module, y compris pendant le rendu serveur (SSR) où `window` n'existe pas
-  // → risque de crash / erreur d'hydratation.
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      console.log("crossOriginIsolated :", window.crossOriginIsolated);
+  function declencherRafraichissementPreview(immediat = false) {
+    if (rafraichissementTimeoutRef.current) clearTimeout(rafraichissementTimeoutRef.current);
+    if (immediat) {
+      setPreviewVersion((v) => v + 1);
+      return;
     }
-  }, []);
+    rafraichissementTimeoutRef.current = setTimeout(() => setPreviewVersion((v) => v + 1), 1200);
+  }
 
-  // --- Montage WebContainer ---
+  function creerNouveauFichier() {
+    const chemin = prompt("Chemin du nouveau fichier (ex: src/components/NouveauComposant.tsx) :");
+    if (!chemin || fichiers[chemin]) return;
+
+    setFichiers((prev) => ({ ...prev, [chemin]: "" }));
+    setModifications((prev) => [...prev, {
+      cheminFichier: chemin, contenuOriginal: "", contenuPropose: "",
+      explication: "Nouveau fichier créé par le développeur", statut: "accepte",
+    }]);
+    setFichierActif(chemin);
+    instanceRef.current?.fs.writeFile(chemin, "").catch(() => { });
+  }
+
+  async function demarrerServeurStatique(instance: WebContainer, terminal: Terminal) {
+    setStatutEnv("Démarrage de live-server...");
+    const serveur = await instance.spawn("npx", ["--yes", "live-server", "--port=3111", "--no-browser", "--host=0.0.0.0"]);
+    processusActifRef.current = serveur;
+    serveur.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
+  }
+
   useEffect(() => {
     if (dejaLance.current) return;
     dejaLance.current = true;
@@ -135,12 +210,6 @@ export default function EspaceTravailPage() {
         writer.releaseLock();
       }
     });
-
-    // CORRECTIF : la définition dupliquée de handleEditionManuelle qui vivait ici
-    // a été supprimée. C'était du code mort : jamais appelée (l'Editor est branché
-    // sur la version définie plus bas, au niveau du composant), mais elle contenait
-    // la BONNE logique de création d'entrée. Cette logique a été fusionnée dans la
-    // version réellement utilisée, cf. plus bas dans le composant.
 
     async function demarrer() {
       apiFetch(`/bugs/${bugId}`).then((data) => {
@@ -185,6 +254,7 @@ export default function EspaceTravailPage() {
       await instance.mount(arborescence);
 
       const aUnPackageJson = recus.some((f) => f.chemin === "package.json");
+      let commandeTrouvee: string[] | null = null;
 
       if (aUnPackageJson) {
         setStatutEnv("Installation des dépendances...");
@@ -192,21 +262,16 @@ export default function EspaceTravailPage() {
         processusActifRef.current = install;
         install.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
         await install.exit;
+        commandeTrouvee = detecterCommandeDemarrage(recus);
+      }
 
-        const commande = detecterCommandeDemarrage(recus);
-        if (!commande) {
-          setStatutEnv(" Aucun script dev/start/serve trouvé dans package.json");
-          return;
-        }
-        setStatutEnv(`Démarrage (${commande.join(" ")})...`);
-        const dev = await instance.spawn(commande[0], commande.slice(1));
+      if (commandeTrouvee) {
+        setStatutEnv(`Démarrage (${commandeTrouvee.join(" ")})...`);
+        const dev = await instance.spawn(commandeTrouvee[0], commandeTrouvee.slice(1));
         processusActifRef.current = dev;
         dev.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
       } else {
-        setStatutEnv("Projet statique — démarrage du serveur...");
-        const serveur = await instance.spawn("npx", ["-y", "serve", "-l", "3111"]);
-        processusActifRef.current = serveur;
-        serveur.output.pipeTo(new WritableStream({ write: (d) => terminal.write(d) }));
+        await demarrerServeurStatique(instance, terminal);
       }
 
       instance.on("server-ready", (_port, url) => {
@@ -227,20 +292,6 @@ export default function EspaceTravailPage() {
     demarrer().catch((err) => setStatutEnv("Erreur : " + err.message));
   }, [bugId]);
 
-  // repartir de zéro, en abandonnant le cache local et les modifications en cours
-  function reinitialiserDepuisGithub() {
-    localStorage.removeItem(cleCache);
-    window.location.reload();
-  }
-
-  async function appliquerDansWebContainer(props: Proposition[]) {
-    const instance = instanceRef.current;
-    if (!instance) return;
-    for (const prop of props) {
-      try { await instance.fs.writeFile(prop.cheminFichier, prop.nouveauContenu); } catch { }
-    }
-  }
-
   async function envoyerMessage() {
     if (!saisie.trim() || enReflexion) return;
     const contenu = saisie;
@@ -253,9 +304,10 @@ export default function EspaceTravailPage() {
     ]);
 
     try {
+      const { fichiersFiltres } = filtrerFichiersPourIA(fichiers);
       const resultat = await apiFetch(`/bugs/${bugId}/demander-analyse`, {
         method: "PATCH",
-        body: JSON.stringify({ instructionDeveloppeur: contenu }),
+        body: JSON.stringify({ instructionDeveloppeur: contenu, fichiers: fichiersFiltres }),
         headers: { "Content-Type": "application/json" },
       });
       const { resumeIA, propositions: nouvelles } = JSON.parse(resultat.proposition);
@@ -283,14 +335,8 @@ export default function EspaceTravailPage() {
           return copie;
         });
 
-        setFichiers((prev) => {
-          const c = { ...prev };
-          nouvelles.forEach((p: Proposition) => { c[p.cheminFichier] = p.nouveauContenu; });
-          return c;
-        });
         setFichierActif(nouvelles[0].cheminFichier);
         setVue("code");
-        await appliquerDansWebContainer(nouvelles);
       }
     } catch (err) {
       setMessages((prev) => {
@@ -313,13 +359,6 @@ export default function EspaceTravailPage() {
     return null;
   }
 
-  // CORRECTIF : version unique et corrigée de handleEditionManuelle.
-  // Avant : si le fichier édité n'avait pas encore d'entrée dans `modifications`,
-  // rien ne se passait (`: prev`) — une édition manuelle sur un fichier jamais
-  // touché par l'IA n'était donc JAMAIS enregistrée, et le bouton "Pousser sur
-  // GitHub" restait désactivé indéfiniment pour ce cas. On crée maintenant une
-  // entrée directement en statut "accepte" (une édition manuelle EST déjà la
-  // décision du développeur, pas besoin d'un cycle accepter/rejeter).
   function handleEditionManuelle(nouveauContenu: string | undefined) {
     if (!fichierActif || nouveauContenu === undefined) return;
     setFichiers((prev) => ({ ...prev, [fichierActif]: nouveauContenu }));
@@ -342,40 +381,42 @@ export default function EspaceTravailPage() {
     });
 
     instanceRef.current?.fs.writeFile(fichierActif, nouveauContenu).catch(() => { });
+    declencherRafraichissementPreview();
   }
 
   function accepterModification(chemin: string) {
+    const mod = modifications.find((m) => m.cheminFichier === chemin);
+    if (!mod) return;
+    setFichiers((prev) => ({ ...prev, [chemin]: mod.contenuPropose }));
+    instanceRef.current?.fs.writeFile(chemin, mod.contenuPropose).catch(() => { });
     setModifications((prev) => prev.map((m) => (m.cheminFichier === chemin ? { ...m, statut: "accepte" } : m)));
     toast.success(`Modification acceptée : ${chemin}`);
+    declencherRafraichissementPreview(true);
   }
 
   function rejeterModification(chemin: string) {
     const mod = modifications.find((m) => m.cheminFichier === chemin);
     if (!mod) return;
-    setFichiers((prev) => ({ ...prev, [chemin]: mod.contenuOriginal }));
-    instanceRef.current?.fs.writeFile(chemin, mod.contenuOriginal).catch(() => { });
     setModifications((prev) => prev.map((m) => (m.cheminFichier === chemin ? { ...m, statut: "rejete" } : m)));
-    toast.info(`Modification annulée : ${chemin}`);
+    toast.info(`Modification rejetée : ${chemin}`);
   }
 
-  // étape 1 — pousser sur GitHub (branche + commits), sans créer de PR
   async function pousserSurGithub() {
-    const modificationsAcceptees = modifications.filter((m) => m.statut === "accepte");
-    if (modificationsAcceptees.length === 0) {
-      toast.error("Acceptez au moins une modification (ou éditez un fichier) avant de pousser sur GitHub.");
+    const nombreAcceptees = modifications.filter((m) => m.statut === "accepte").length;
+    if (nombreAcceptees === 0) {
+      toast.error("Acceptez au moins une modification (ou éditez/créez un fichier) avant de pousser sur GitHub.");
       return;
     }
     setPushEnCours(true);
     try {
+      const fichiersAPousser = filtrerFichiersPourPush(fichiers);
       const resultat = await apiFetch(`/bugs/${bugId}/pousser-github`, {
         method: "POST",
-        body: JSON.stringify({
-          propositions: modificationsAcceptees.map((m) => ({ cheminFichier: m.cheminFichier, nouveauContenu: m.contenuPropose, explication: m.explication })),
-        }),
+        body: JSON.stringify({ fichiers: fichiersAPousser }),
         headers: { "Content-Type": "application/json" },
       });
       setBranchePoussee(resultat.branchePoussee);
-      toast.success(`Modifications poussées sur la branche ${resultat.branchePoussee}`);
+      toast.success(`Code poussé sur la branche ${resultat.branchePoussee} (${fichiersAPousser.length} fichiers)`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur lors du push sur GitHub");
     } finally {
@@ -383,7 +424,8 @@ export default function EspaceTravailPage() {
     }
   }
 
-  // étape 2 — créer la PR, uniquement possible après un push réussi
+  // MODIFIÉ : peut désormais être rappelée après un nouveau push, même si une PR
+  // existe déjà — le backend renvoie les infos de la PR existante au lieu d'échouer.
   async function creerPullRequest() {
     if (!branchePoussee) {
       toast.error("Poussez d'abord vos modifications sur GitHub.");
@@ -393,7 +435,7 @@ export default function EspaceTravailPage() {
     try {
       const resultat = await apiFetch(`/bugs/${bugId}/creer-pull-request`, { method: "POST" });
       setResultatPR({ url: resultat.urlPR, numeroPR: resultat.numeroPR });
-      toast.success(`Pull Request #${resultat.numeroPR} créée`);
+      toast.success(resultatPR ? `Pull Request #${resultat.numeroPR} mise à jour` : `Pull Request #${resultat.numeroPR} créée`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur lors de la création de la Pull Request");
     } finally {
@@ -403,10 +445,13 @@ export default function EspaceTravailPage() {
 
   const nomsFichiers = Object.keys(fichiers);
   const nombreModificationsAcceptees = modifications.filter((m) => m.statut === "accepte").length;
+  const modificationDuFichierActif = fichierActif ? modifications.find((m) => m.cheminFichier === fichierActif) : undefined;
+  // MODIFIÉ : plus de toggle manuel — le diff s'affiche automatiquement tant que
+  // la proposition n'a pas été acceptée/rejetée.
+  const afficherEnDiff = !!modificationDuFichierActif && modificationDuFichierActif.statut === "en_attente";
 
   return (
     <div className="relative flex h-[calc(100vh-64px)] -m-6 flex-col gap-0 overflow-hidden bg-slate-50/30">
-      {/* Barre supérieure */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-4 py-2.5 shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2.5">
           <Link href="/bugs" className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors">
@@ -417,7 +462,7 @@ export default function EspaceTravailPage() {
             <Sparkles className="h-4 w-4 text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#12151F]">Espace de travail — Bug #{bugId}</p>
+            <p className="text-sm font-semibold text-[#12151F]">Espace de travail</p>
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className={`h-1.5 w-1.5 rounded-full ${envPret ? "bg-emerald-500" : "animate-pulse bg-amber-400"}`} />
               {statutEnv}
@@ -426,10 +471,6 @@ export default function EspaceTravailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* CORRECTIF : le lien PR (s'il existe) et le bouton push cohabitent
-              désormais. Revenir traiter un bug déjà poussé/déjà en PR reste
-              possible : pousser à nouveau ajoute simplement des commits sur la
-              branche existante (le PR déjà ouvert les reflète automatiquement). */}
           {resultatPR && (
             <a href={resultatPR.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
               <CheckCircle2 className="h-3.5 w-3.5" /> PR #{resultatPR.numeroPR} <ExternalLink className="h-3 w-3" />
@@ -448,29 +489,28 @@ export default function EspaceTravailPage() {
             {branchePoussee ? "Repousser sur GitHub" : "Pousser sur GitHub"}
           </Button>
 
-          {/* Une fois la PR ouverte, plus besoin d'en recréer une — seul le push reste utile */}
-          {!resultatPR && (
-            <Button
-              onClick={creerPullRequest}
-              disabled={prEnCours || !branchePoussee}
-              size="sm"
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm"
-              title={!branchePoussee ? "Poussez d'abord vos modifications sur GitHub" : undefined}
-            >
-              {prEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitPullRequest className="h-3.5 w-3.5" />}
-              Créer la Pull Request
-            </Button>
-          )}
+          {/* MODIFIÉ : ce bouton reste désormais toujours visible dès qu'une branche
+              a été poussée, même après une première PR créée — cliquer à nouveau
+              après un nouveau push met simplement à jour les infos de la PR. */}
+          <Button
+            onClick={creerPullRequest}
+            disabled={prEnCours || !branchePoussee}
+            size="sm"
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm"
+            title={!branchePoussee ? "Poussez d'abord vos modifications sur GitHub" : undefined}
+          >
+            {prEnCours ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitPullRequest className="h-3.5 w-3.5" />}
+            {resultatPR ? "Mettre à jour la Pull Request" : "Créer la Pull Request"}
+          </Button>
         </div>
       </div>
 
       {branchePoussee && !resultatPR && (
         <div className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-700">
-          <GitBranch className="h-3 w-3" /> Modifications poussées sur <code className="font-mono">{branchePoussee}</code> — vous pouvez maintenant créer la Pull Request.
+          <GitBranch className="h-3 w-3" /> Code poussé sur <code className="font-mono">{branchePoussee}</code> — vous pouvez maintenant créer la Pull Request.
         </div>
       )}
 
-      {/* Corps redimensionnable — inchangé à partir d'ici */}
       <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {chatOuvert && (
           <>
@@ -570,6 +610,9 @@ export default function EspaceTravailPage() {
                     <ResizablePanelGroup orientation="horizontal" className="flex-1">
                       <ResizablePanel defaultSize={150} minSize={150} maxSize={200}>
                         <div className="h-full border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+                          <button onClick={creerNouveauFichier} className="w-full border-b border-slate-100 px-3 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-50">
+                            + Nouveau fichier
+                          </button>
                           <FileTree fichiers={nomsFichiers} fichierActif={fichierActif} onSelect={setFichierActif} fichiersModifies={new Set(modifications.map((m) => m.cheminFichier))} />
                         </div>
                       </ResizablePanel>
@@ -577,27 +620,59 @@ export default function EspaceTravailPage() {
                       <ResizablePanel defaultSize={100}>
                         <div className="flex h-full flex-col overflow-hidden">
                           {fichierActif && (
-                            <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-1.5 text-xs text-slate-400 bg-white">
-                              {fichierActif.split("/").map((segment, i, arr) => (
-                                <span key={i} className="flex items-center gap-1">
-                                  {i > 0 && <span className="text-slate-300">/</span>}
-                                  <span className={i === arr.length - 1 ? "font-medium text-slate-600" : ""}>{segment}</span>
-                                </span>
-                              ))}
+                            <div className="flex items-center justify-between gap-1 border-b border-slate-100 px-3 py-1.5 bg-white">
+                              <div className="flex items-center gap-1 text-xs text-slate-400">
+                                {fichierActif.split("/").map((segment, i, arr) => (
+                                  <span key={i} className="flex items-center gap-1">
+                                    {i > 0 && <span className="text-slate-300">/</span>}
+                                    <span className={i === arr.length - 1 ? "font-medium text-slate-600" : ""}>{segment}</span>
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* MODIFIÉ : seuls les boutons Accepter/Rejeter restent, plus de
+                                  toggle Diff/Éditer — la vue s'adapte automatiquement au statut. */}
+                              {modificationDuFichierActif?.statut === "en_attente" && (
+                                <div className="flex items-center gap-1.5">
+                                  <Button size="sm" variant="outline" onClick={() => rejeterModification(fichierActif)} className="h-6 gap-1 border-red-200 px-2 text-xs text-red-600 hover:bg-red-50">
+                                    <XCircle className="h-3 w-3" /> Rejeter
+                                  </Button>
+                                  <Button size="sm" onClick={() => accepterModification(fichierActif)} className="h-6 gap-1 bg-emerald-600 px-2 text-xs hover:bg-emerald-700">
+                                    <CheckCircle2 className="h-3 w-3" /> Accepter
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           )}
                           <div className="flex-1">
-                            {fichierActif ? (
-                              <Editor height="100%" path={fichierActif} value={fichiers[fichierActif]} onChange={handleEditionManuelle} theme="vs-dark" options={{ fontSize: 13, minimap: { enabled: false }, padding: { top: 12 } }} />
-                            ) : (
+                            {!fichierActif ? (
                               <div className="flex h-full items-center justify-center text-sm text-slate-400">Aucun fichier chargé</div>
+                            ) : afficherEnDiff && modificationDuFichierActif ? (
+                              <DiffEditor
+                                height="100%"
+                                original={modificationDuFichierActif.contenuOriginal}
+                                modified={modificationDuFichierActif.contenuPropose}
+                                theme="vs-dark"
+                                options={{ fontSize: 13, readOnly: true, renderSideBySide: true, minimap: { enabled: false } }}
+                              />
+                            ) : (
+                              <Editor height="100%" path={fichierActif} value={fichiers[fichierActif]} onChange={handleEditionManuelle} theme="vs-dark" options={{ fontSize: 13, minimap: { enabled: false }, padding: { top: 12 } }} />
                             )}
                           </div>
                         </div>
                       </ResizablePanel>
                     </ResizablePanelGroup>
                   ) : urlPreview ? (
-                    <iframe src={urlPreview} className="h-full w-full bg-white" />
+                    <div className="relative h-full w-full">
+                      <button
+                        onClick={() => declencherRafraichissementPreview(true)}
+                        className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/90 px-2 py-1 text-xs text-slate-600 shadow-sm backdrop-blur hover:bg-white"
+                        title="Recharger l'aperçu depuis l'état actuel"
+                      >
+                        <RefreshCw className="h-3 w-3" /> Rafraîchir
+                      </button>
+                      <iframe key={previewVersion} src={urlPreview} className="h-full w-full bg-white" />
+                    </div>
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-slate-400">
                       <Loader2 className="h-5 w-5 animate-spin" /> En attente du démarrage du serveur...

@@ -214,9 +214,7 @@ export default function ApercuTesteur() {
               <p className="text-xs text-slate-500">Signalez un bug par message, avec captures si besoin</p>
             </div>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> En ligne
-          </span>
+          
         </div>
         <ScrollArea className="min-h-0 flex-1 bg-[#FCFCF9]">
           <div className="flex flex-col gap-4 p-4 sm:p-5 max-w-3xl mx-auto w-full">

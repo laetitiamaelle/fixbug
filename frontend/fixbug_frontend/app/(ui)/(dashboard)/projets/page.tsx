@@ -87,9 +87,7 @@ export default function ProjetsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {projets && projets.length > 0 && (
-              <span className="hidden sm:inline-flex text-xs text-slate-500 mr-1">{projetsFiltres?.length} / {projets.length}</span>
-            )}
+            
             {estChefProjet && (
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger className={buttonVariants({ className: "bg-[#12151F] hover:bg-[#12151F]/90" })}>
@@ -98,7 +96,7 @@ export default function ProjetsPage() {
                 <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Créer un nouveau projet</DialogTitle>
-                    <DialogDescription>Configurez les informations de base de votre nouveau projet.</DialogDescription>
+                    <DialogDescription>Configurez les informations de votre nouveau projet.</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleCreate} className="space-y-4 mt-2">
                       <div className="space-y-2">

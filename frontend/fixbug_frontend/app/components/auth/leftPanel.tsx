@@ -12,7 +12,7 @@ export function LeftPanel({ headline, description }: LeftPanelProps) {
     <div className="hidden h-full flex-col bg-[#0B0E17] p-8 md:flex md:w-[52%] lg:p-10 relative overflow-hidden">
       <div className="pointer-events-none absolute -top-28 -right-28 h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-[70px]" />
       <div className="pointer-events-none absolute -bottom-32 -left-32 h-[480px] w-[480px] rounded-full bg-violet-500/10 blur-[80px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:28px_28px]" />
+      <div className="pointer-events-none absolute inset-0bg-[size:28px_28px]" />
 
       <div className="relative flex items-center justify-between">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors group">
